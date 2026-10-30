@@ -4,6 +4,10 @@
 
 Early development.
 
+The frontend foundation, documentation baseline, environment boundary, and state collector are implemented.
+
+Database, authentication, Redis, messaging, email, storage, and production deployment are not implemented yet.
+
 ## Current Foundation
 
 - Next.js 16
@@ -11,20 +15,91 @@ Early development.
 - TypeScript
 - App Router
 - Tailwind CSS
+- shadcn/ui
+- Lucide icons
 - npm
 - Windows 11 terminal-first development
+- GitHub repository
+- Zod environment validation foundation
+- safe state-bundle collector
 
-## Planned Architecture
+## Target Architecture
 
-The target architecture is a Vercel-native student/alumni networking application using PostgreSQL, Drizzle, Better Auth, Redis, real-time messaging, testing, CI/CD, and security-focused server-side authorization.
+IMS Network is planned as a Vercel-native student and alumni networking application.
 
-Planned features are not considered implemented until verified in the repository.
+Target technologies include:
 
-## Principles
+- Neon PostgreSQL
+- Drizzle ORM
+- Better Auth
+- Upstash Redis
+- Vercel WebSockets
+- Resend
+- Vercel Blob
+- Vitest
+- Playwright
+- GitHub Actions
+
+Planned technologies are not considered implemented until their roadmap phases are completed and verified.
+
+## Architecture Principles
 
 - PostgreSQL is the durable source of truth.
-- Redis is used only for caching, rate limiting, ephemeral coordination, and real-time relay where needed.
+- Redis is cache and coordination infrastructure, not durable application storage.
 - Server Components are preferred by default.
-- Client Components are used only where browser interactivity is required.
-- Provider-specific integrations should remain isolated.
-- Security, accessibility, testing, and Hobby-tier cost awareness are continuous requirements.
+- Client Components are used only when browser interaction is required.
+- Provider-specific integrations remain isolated behind server-side modules.
+- Authentication and authorization are enforced server-side.
+- User-provided identity or role information is never trusted directly.
+- Lists and message history must remain bounded and paginated.
+- Real-time connections must be lazy and route-scoped.
+- No global WebSocket should exist merely because a user is authenticated.
+- Security, accessibility, testing, and cost awareness are continuous requirements.
+
+## Environment Boundaries
+
+Server environment validation lives under:
+
+    src/server/env.ts
+
+Browser-safe configuration lives under:
+
+    src/lib/env/
+
+Secrets must never be exposed through NEXT_PUBLIC_ variables.
+
+The project currently requires no provider-specific secret environment variables.
+
+## Architecture Decision Records
+
+Important decisions are documented under:
+
+    docs/adr/
+
+Current ADRs:
+
+- ADR 0001: Next.js and Vercel-Native Architecture
+- ADR 0002: npm as the Canonical Package Manager
+- ADR 0003: Neon PostgreSQL and Drizzle ORM
+- ADR 0004: Better Auth Session Model
+- ADR 0005: Redis Role Boundaries
+
+## Hobby-Tier Design
+
+The initial cost and capacity rules are documented in:
+
+    docs/hobby-budget.md
+
+Provider pricing and quotas must be rechecked against current official documentation before cost-sensitive implementation decisions.
+
+## State Recovery
+
+Repository reality can be summarized with:
+
+    npm run state
+
+This generates:
+
+    IMS_NETWORK_STATE_BUNDLE.txt
+
+The bundle is local, Git-ignored, and built from an explicit safe allowlist.
