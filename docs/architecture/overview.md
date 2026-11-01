@@ -6,7 +6,7 @@ Early development.
 
 The frontend foundation, documentation baseline, environment boundary, state collector, and Neon/Drizzle database foundation are implemented.
 
-Authentication, Redis, messaging, email, storage, and production deployment are not implemented yet.
+Email verification/password recovery, Redis, messaging, email delivery, storage, and production deployment are not implemented yet.
 
 ## Current Foundation
 
@@ -26,6 +26,9 @@ Authentication, Redis, messaging, email, storage, and production deployment are 
 - Drizzle ORM and Drizzle Kit migration foundation
 - pooled Neon runtime database adapter
 - database health-check tooling
+- Better Auth email/password authentication
+- HttpOnly cookie-backed sessions
+- server-side authenticated route protection
 
 ## Target Architecture
 

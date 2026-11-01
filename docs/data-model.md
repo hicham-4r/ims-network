@@ -140,3 +140,102 @@ The health query successfully returns:
 - database timestamp.
 
 The initial enum migration was also verified against Neon.
+
+## Better Auth Core Schema
+
+Phase 7 introduced the Better Auth persistence layer.
+
+Current authentication tables:
+
+- user
+- session
+- account
+- verification
+
+### user
+
+Stores the Better Auth identity record.
+
+Important fields include:
+
+- id
+- name
+- email
+- email_verified
+- image
+- created_at
+- updated_at
+
+The email column is unique.
+
+### session
+
+Stores authenticated sessions.
+
+Important fields include:
+
+- id
+- expires_at
+- token
+- created_at
+- updated_at
+- ip_address
+- user_agent
+- user_id
+
+The session token is unique.
+
+session.user_id references user.id with ON DELETE CASCADE.
+
+### account
+
+Stores authentication-provider credentials and provider metadata.
+
+For the current email/password configuration, Better Auth creates a credential account with a stored password hash.
+
+account.user_id references user.id with ON DELETE CASCADE.
+
+### verification
+
+Reserved for verification and token workflows used by Better Auth.
+
+Email verification itself is not implemented yet. That belongs to Phase 8.
+
+## Authentication Boundary
+
+Authentication is implemented through Better Auth.
+
+Current server-side components include:
+
+- src/server/auth/auth.ts
+- src/server/auth/session.ts
+- src/server/auth/index.ts
+
+The browser-side client lives at:
+
+- src/lib/auth-client.ts
+
+The Better Auth API route is:
+
+- /api/auth/[...all]
+
+Protected server pages derive identity from the validated Better Auth session.
+
+The application does not trust browser-supplied user IDs, query parameters, or custom identity headers.
+
+## Phase 7 Verification
+
+The following behaviors were manually verified:
+
+- account registration succeeds;
+- credential account creation succeeds;
+- session creation succeeds;
+- sign-out removes the active session;
+- sign-in creates a fresh session;
+- anonymous dashboard access is denied;
+- forged userId query parameters do not grant access;
+- forged X-User-Id headers do not grant access;
+- incorrect passwords are rejected;
+- incorrect-password attempts do not create additional sessions.
+
+Email verification and password-reset flows are intentionally deferred to Phase 8.
