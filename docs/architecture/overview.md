@@ -1,12 +1,12 @@
-﻿# IMS Network Architecture
+# IMS Network Architecture
 
 ## Status
 
 Early development.
 
-The frontend foundation, documentation baseline, environment boundary, and state collector are implemented.
+The frontend foundation, documentation baseline, environment boundary, state collector, and Neon/Drizzle database foundation are implemented.
 
-Database, authentication, Redis, messaging, email, storage, and production deployment are not implemented yet.
+Authentication, Redis, messaging, email, storage, and production deployment are not implemented yet.
 
 ## Current Foundation
 
@@ -22,6 +22,10 @@ Database, authentication, Redis, messaging, email, storage, and production deplo
 - GitHub repository
 - Zod environment validation foundation
 - safe state-bundle collector
+- Neon PostgreSQL development database
+- Drizzle ORM and Drizzle Kit migration foundation
+- pooled Neon runtime database adapter
+- database health-check tooling
 
 ## Target Architecture
 

@@ -1,0 +1,2 @@
+CREATE TYPE "public"."account_role" AS ENUM('MEMBER', 'ADMIN');--> statement-breakpoint
+CREATE TYPE "public"."account_status" AS ENUM('UNVERIFIED', 'PENDING_APPROVAL', 'ACTIVE', 'REJECTED', 'SUSPENDED');
