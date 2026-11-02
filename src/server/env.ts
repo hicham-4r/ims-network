@@ -13,12 +13,22 @@ const serverEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]),
   DATABASE_URL: postgresUrlSchema,
   DATABASE_URL_POOLED: postgresUrlSchema,
+
   BETTER_AUTH_SECRET: z
     .string()
     .min(32, "BETTER_AUTH_SECRET must be at least 32 characters"),
+
   BETTER_AUTH_URL: z
     .string()
     .url("BETTER_AUTH_URL must be a valid URL"),
+
+  RESEND_API_KEY: z
+    .string()
+    .min(1, "RESEND_API_KEY is required"),
+
+  RESEND_FROM_EMAIL: z
+    .string()
+    .min(1, "RESEND_FROM_EMAIL is required"),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
@@ -32,6 +42,8 @@ export function parseServerEnv(
     DATABASE_URL_POOLED: input.DATABASE_URL_POOLED,
     BETTER_AUTH_SECRET: input.BETTER_AUTH_SECRET,
     BETTER_AUTH_URL: input.BETTER_AUTH_URL,
+    RESEND_API_KEY: input.RESEND_API_KEY,
+    RESEND_FROM_EMAIL: input.RESEND_FROM_EMAIL,
   });
 
   if (!result.success) {

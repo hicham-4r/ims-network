@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -47,6 +47,11 @@ export default function SignInPage() {
       });
 
       if (error) {
+        if (error.status === 403) {
+          router.replace("/verify-email");
+          return;
+        }
+
         setErrorMessage("Invalid email or password.");
         return;
       }
@@ -120,6 +125,15 @@ export default function SignInPage() {
               ) : null}
             </Field>
           </FieldGroup>
+
+          <div className="text-right">
+            <Link
+              href="/forgot-password"
+              className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
 
           <Button
             type="submit"

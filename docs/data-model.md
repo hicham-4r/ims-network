@@ -1,4 +1,4 @@
-﻿# IMS Network Data Model
+# IMS Network Data Model
 
 ## Status
 
@@ -239,3 +239,27 @@ The following behaviors were manually verified:
 - incorrect-password attempts do not create additional sessions.
 
 Email verification and password-reset flows are intentionally deferred to Phase 8.
+
+## Phase 8 — Email verification and password recovery
+
+Better Auth owns all verification and password-reset tokens. IMS Network does not create, persist, or validate custom authentication tokens.
+
+Email verification behavior:
+- New email/password accounts must verify email ownership before sign-in.
+- Verification links are generated and validated by Better Auth.
+- Verification links expire after one hour.
+- Verification does not automatically create an authenticated session.
+- Unverified users cannot access authenticated application routes.
+- Verification emails are delivered through the server-only Resend adapter.
+
+Password recovery behavior:
+- Password-reset links are generated and validated by Better Auth.
+- Reset links expire after one hour.
+- Password-reset responses remain generic to reduce account-enumeration leakage.
+- Existing sessions are revoked after a successful password reset.
+- Used reset tokens cannot be reused.
+- Reset tokens are removed from the browser address bar after the reset page reads them.
+
+Resend development limitation:
+- Development currently uses the Resend test sender.
+- Production must use a verified application-owned email domain before arbitrary recipient delivery is enabled.

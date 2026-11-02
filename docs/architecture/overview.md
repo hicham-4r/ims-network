@@ -110,3 +110,16 @@ This generates:
     IMS_NETWORK_STATE_BUNDLE.txt
 
 The bundle is local, Git-ignored, and built from an explicit safe allowlist.
+
+### Phase 8 authentication email lifecycle
+
+The authentication foundation now includes:
+- mandatory email verification for email/password accounts
+- server-only transactional email delivery through Resend
+- generic verification resend behavior
+- forgot-password and reset-password flows
+- Better Auth-owned verification and reset tokens
+- reset-token expiry and single-use behavior
+- session revocation after successful password reset
+
+The application does not expose authentication or email-provider secrets to browser code. Production email delivery will require a verified application-owned domain.
