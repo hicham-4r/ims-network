@@ -1,42 +1,44 @@
-﻿# IMS Network
+# IMS Network
 
-IMS Network is a modern student and alumni networking application being rebuilt from scratch with a Vercel-native TypeScript architecture.
+IMS Network is a dedicated alumni networking platform for graduates of the IMS program at ESITH, Morocco.
 
-The project is currently in early development.
+The project connects generations of IMS alumni through a secure community where graduates can discover each other, maintain professional relationships, and communicate.
 
-## Current Status
+## Community
 
-Implemented and verified:
+- Institution: ESITH, Morocco
+- Target audience: IMS alumni
+- Public profile: display name, program, graduation year, and bio
+- Membership: email verification followed by administrator approval
+- Development target: Vercel Hobby, with cost-aware architecture
 
-- Next.js 16 App Router
-- React
-- TypeScript
-- Tailwind CSS
-- ESLint
-- npm
-- Windows 11 terminal-first workflow
-- Git repository using the main branch
-- GitHub private repository
-- lint verification
-- TypeScript type checking
-- production build verification
-- initial security and architecture documentation
+## Implementation Status
 
-Not yet implemented:
+### Completed: Phases 0-9
 
-- database
-- authentication
-- member profiles
-- member directory
-- messaging
-- Redis
-- WebSockets
-- email
-- admin tools
-- audit logging
-- production deployment
+- Next.js, React, TypeScript and UI foundation
+- GitHub repository and development tooling
+- Neon PostgreSQL and Drizzle ORM
+- Better Auth authentication
+- Email verification and password recovery
+- Account approval, suspension and rejection
+- Administrator authorization and audit logging
 
-Planned features are not considered complete until they are implemented and verified in the repository.
+### In progress: Phase 10
+
+- Editable alumni profiles
+- Active-member directory and filtering
+- Individual alumni profile pages
+- Privacy and authorization verification
+- Database migration and query review
+
+### Upcoming
+
+- Profile avatars
+- Direct messaging and real-time delivery
+- Redis caching and rate limiting
+- Automated testing and CI/CD
+- Vercel deployment
 
 ## Development Environment
 

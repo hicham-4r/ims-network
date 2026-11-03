@@ -1,5 +1,6 @@
 ﻿import {
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -137,6 +138,74 @@ export const auditLog = pgTable(
     ),
     index("audit_logs_created_at_idx").on(
       table.createdAt,
+    ),
+  ],
+);
+
+
+export const profiles = pgTable(
+  "profiles",
+  {
+    userId: text("user_id")
+      .primaryKey()
+      .references(() => user.id, {
+        onDelete: "cascade",
+      }),
+
+    displayName: text("display_name")
+      .notNull(),
+
+    displayNameSearch: text(
+      "display_name_search",
+    ).notNull(),
+
+    program: text("program"),
+
+    programSearch: text(
+      "program_search",
+    ),
+
+    department: text("department"),
+
+    departmentSearch: text(
+      "department_search",
+    ),
+
+    graduationYear: integer(
+      "graduation_year",
+    ),
+
+    bio: text("bio"),
+
+    avatarUrl: text("avatar_url"),
+
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+    })
+      .defaultNow()
+      .notNull(),
+
+    updatedAt: timestamp("updated_at", {
+      withTimezone: true,
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("profiles_display_name_search_idx").on(
+      table.displayNameSearch,
+    ),
+
+    index("profiles_program_search_idx").on(
+      table.programSearch,
+    ),
+
+    index("profiles_department_search_idx").on(
+      table.departmentSearch,
+    ),
+
+    index("profiles_graduation_year_idx").on(
+      table.graduationYear,
     ),
   ],
 );

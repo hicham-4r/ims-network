@@ -1,5 +1,21 @@
 # IMS Network Data Model
 
+## ESITH IMS alumni scope (2026-11-03)
+
+IMS Network is for alumni of ESITH's IMS program in Morocco. Public profile
+fields are `display_name`, `program`, `graduation_year`, and `bio`; school is
+static application copy. No department field is displayed, edited, or searched.
+
+The already-applied Phase 10 migration `0003_steep_roulette.sql` created nullable
+`department` and `department_search` columns. They are temporarily retained
+in PostgreSQL and the Drizzle schema to avoid destroying existing data or
+rewriting applied migration history. Application profile writes and directory
+queries no longer use them. A separate reviewed migration may drop them after
+confirming whether they contain data and preserving a backup if necessary.
+
+Membership is gated by `ACTIVE` status after explicit administrative approval;
+email verification does not itself establish alumni eligibility.
+
 ## Status
 
 Phase 6 database foundation.

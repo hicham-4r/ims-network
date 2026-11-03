@@ -18,9 +18,9 @@ import {
 
 const principles = [
   {
-    title: "Student network",
+    title: "ESITH IMS alumni",
     description:
-      "A focused space for members to discover profiles and build useful academic and professional connections.",
+      "A dedicated space for graduates of ESITH’s IMS program to reconnect across cohorts and share professional experiences.",
     icon: UsersRound,
   },
   {
@@ -59,17 +59,17 @@ export default function Home() {
                 variant="secondary"
                 className="mb-6 w-fit"
               >
-                Early development
+                ESITH · IMS alumni
               </Badge>
 
               <h1 className="max-w-4xl text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
-                A modern network for meaningful student and alumni connections.
+                Reconnect with the ESITH IMS alumni community.
               </h1>
 
               <p className="mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-                IMS Network is being rebuilt as a secure, responsive, and
-                Vercel-native application with a strong TypeScript foundation
-                and a deliberately simple architecture.
+                A dedicated network for graduates of the IMS program at
+                ESITH in Morocco. Discover fellow alumni, share your journey,
+                and build lasting connections across graduating classes.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
@@ -96,14 +96,14 @@ export default function Home() {
             <Card className="self-center">
               <CardHeader>
                 <CardDescription>Current milestone</CardDescription>
-                <CardTitle>Frontend foundation</CardTitle>
+                <CardTitle>Alumni profiles and directory</CardTitle>
               </CardHeader>
 
               <CardContent className="space-y-4 text-sm text-muted-foreground">
                 <p>
-                  The Next.js, TypeScript, Tailwind, shadcn/ui, Git, and
-                  documentation foundations are being established before
-                  backend features are introduced.
+                  Secure authentication, administrator approval, profile
+                  editing, and a searchable member directory are available
+                  in development. Messaging will follow in later phases.
                 </p>
 
                 <div className="rounded-lg border bg-muted/40 p-4">
@@ -125,14 +125,13 @@ export default function Home() {
             </p>
 
             <h2 className="mt-2 text-3xl font-semibold tracking-tight">
-              Building the foundation before the features.
+              Building the ESITH IMS alumni community.
             </h2>
 
             <p className="mt-4 leading-7 text-muted-foreground">
-              The project is intentionally progressing in verified phases.
-              Database, authentication, profiles, messaging, administration,
-              Redis, and production deployment remain future implementation
-              work.
+              Development now includes Neon PostgreSQL, authentication,
+              account approval, profiles, and the member directory.
+              Messaging, avatars, Redis, and deployment remain on the roadmap.
             </p>
           </div>
         </section>
@@ -184,18 +183,17 @@ export default function Home() {
         >
           <Card>
             <CardHeader>
-              <CardDescription>Next foundation work</CardDescription>
+              <CardDescription>Next development work</CardDescription>
               <CardTitle>
-                Design system and application boundaries
+                Alumni profile details and messaging
               </CardTitle>
             </CardHeader>
 
             <CardContent>
               <p className="max-w-3xl leading-7 text-muted-foreground">
-                The next UI work will establish the public, authentication,
-                member, and administration layout boundaries together with
-                accessible forms, loading states, empty states, and responsive
-                navigation patterns.
+                The next milestones add individual alumni profile pages,
+                avatar support, and secure direct messaging, while keeping
+                the application accessible and cost-conscious.
               </p>
             </CardContent>
           </Card>
@@ -204,7 +202,7 @@ export default function Home() {
 
       <footer className="border-t">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-8 text-sm text-muted-foreground sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-          <p>IMS Network</p>
+          <p>IMS Network · ESITH, Morocco</p>
           <p>Built with a security-first, cost-aware architecture.</p>
         </div>
       </footer>

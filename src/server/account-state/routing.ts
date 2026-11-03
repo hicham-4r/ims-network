@@ -1,27 +1,25 @@
 ﻿import { redirect } from "next/navigation";
 
 import { getCurrentSession } from "@/server/auth";
-import type { AccountStatus } from "@/server/db/schema";
+import type {
+  AccountStatus,
+} from "@/server/db/schema";
 
-import { ensureApplicationUserState } from "./service";
+import {
+  loadApplicationAccountContext,
+} from "./context";
 
 export async function getApplicationPageAccount() {
-  const session = await getCurrentSession();
+  const session =
+    await getCurrentSession();
 
   if (!session) {
     redirect("/sign-in");
   }
 
-  const accountState =
-    await ensureApplicationUserState({
-      id: session.user.id,
-      emailVerified: session.user.emailVerified,
-    });
-
-  return {
+  return loadApplicationAccountContext(
     session,
-    accountState,
-  };
+  );
 }
 
 export function redirectRestrictedAccount(
@@ -52,12 +50,16 @@ export async function requireAccountStatusPage(
     await getApplicationPageAccount();
 
   if (
-    context.accountState.status === expectedStatus
+    context.accountState.status ===
+    expectedStatus
   ) {
     return context;
   }
 
-  if (context.accountState.status === "ACTIVE") {
+  if (
+    context.accountState.status ===
+    "ACTIVE"
+  ) {
     redirect("/dashboard");
   }
 
@@ -76,7 +78,10 @@ export async function requireAdminPage() {
     context.accountState.status,
   );
 
-  if (context.accountState.role !== "ADMIN") {
+  if (
+    context.accountState.role !==
+    "ADMIN"
+  ) {
     redirect("/dashboard");
   }
 

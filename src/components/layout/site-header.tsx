@@ -20,7 +20,7 @@ export function SiteHeader() {
             <Network className="size-5" aria-hidden="true" />
           </span>
 
-          <span>IMS Network</span>
+          <span>IMS Network <span className="text-muted-foreground">· ESITH</span></span>
         </Link>
 
         <nav

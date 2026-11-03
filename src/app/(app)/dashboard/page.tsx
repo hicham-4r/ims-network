@@ -1,4 +1,6 @@
-﻿import { SignOutButton } from "@/components/auth/sign-out-button";
+import Link from "next/link";
+
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import {
   Card,
   CardContent,
@@ -19,7 +21,7 @@ export default async function DashboardPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-medium text-primary">
-            Member application
+            ESITH · IMS alumni
           </p>
 
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">
@@ -27,11 +29,23 @@ export default async function DashboardPage() {
           </h1>
 
           <p className="mt-3 max-w-2xl text-muted-foreground">
-            Welcome, {session.user.name}.
+            Welcome, {session.user.name}. Connect with fellow IMS graduates.
           </p>
         </div>
 
-        <SignOutButton />
+        <div className="flex items-center gap-3">
+          <Link
+            href="/profile"
+            className="text-sm font-medium underline-offset-4 hover:underline"
+          >
+            Edit profile
+          </Link>
+
+          <Link href="/members" className="text-sm font-medium underline-offset-4 hover:underline">
+            Members
+          </Link>
+          <SignOutButton />
+        </div>
       </div>
 
       <Card>
@@ -56,9 +70,8 @@ export default async function DashboardPage() {
           </p>
 
           <p>
-            Member profiles, messaging,
-            notifications, and statistics will be
-            added in later phases.
+            Your profile and the alumni directory are available now.
+            Messaging and additional features are planned for later phases.
           </p>
         </CardContent>
       </Card>

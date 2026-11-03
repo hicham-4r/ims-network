@@ -77,7 +77,8 @@ export default function SignUpPage() {
       <CardHeader>
         <CardTitle>Create account</CardTitle>
         <CardDescription>
-          Create your IMS Network account.
+          Apply to join the ESITH IMS alumni network.
+          An administrator reviews accounts before access.
         </CardDescription>
       </CardHeader>
 
