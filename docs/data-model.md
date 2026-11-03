@@ -240,7 +240,7 @@ The following behaviors were manually verified:
 
 Email verification and password-reset flows are intentionally deferred to Phase 8.
 
-## Phase 8 — Email verification and password recovery
+## Phase 8 â€” Email verification and password recovery
 
 Better Auth owns all verification and password-reset tokens. IMS Network does not create, persist, or validate custom authentication tokens.
 
@@ -263,3 +263,38 @@ Password recovery behavior:
 Resend development limitation:
 - Development currently uses the Resend test sender.
 - Production must use a verified application-owned email domain before arbitrary recipient delivery is enabled.
+
+## Phase 9 â€” Application account state
+
+IMS Network separates authentication identity from application authorization.
+
+Better Auth owns authentication identity and sessions.
+
+The application-owned `application_user_state` table owns member access state:
+
+- `UNVERIFIED`
+- `PENDING_APPROVAL`
+- `ACTIVE`
+- `REJECTED`
+- `SUSPENDED`
+
+Application roles are:
+
+- `MEMBER`
+- `ADMIN`
+
+State transitions:
+
+- `UNVERIFIED -> PENDING_APPROVAL` after verified email ownership
+- `PENDING_APPROVAL -> ACTIVE` through explicit administrator approval
+- `PENDING_APPROVAL -> REJECTED` through explicit administrator rejection
+- `ACTIVE -> SUSPENDED` through administrator suspension
+- `SUSPENDED -> ACTIVE` through administrator restoration
+
+There is no automatic transition to `ACTIVE`.
+
+Only `ACTIVE` accounts receive normal member access.
+
+Rejected and suspended transitions revoke existing Better Auth database sessions so an old browser cookie cannot retain normal application access.
+
+The `audit_logs` table records privileged account-management events. Audit metadata is intentionally minimal and must never contain passwords, cookies, authentication secrets, reset tokens, verification tokens, provider credentials, or database connection strings.

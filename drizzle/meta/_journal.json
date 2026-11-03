@@ -15,6 +15,13 @@
       "when": 1793493560846,
       "tag": "0001_past_naoko",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793663938992,
+      "tag": "0002_optimal_nicolaos",
+      "breakpoints": true
     }
   ]
 }

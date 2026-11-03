@@ -1,20 +1,18 @@
-﻿import { redirect } from "next/navigation";
-
-import { SignOutButton } from "@/components/auth/sign-out-button";
+﻿import { SignOutButton } from "@/components/auth/sign-out-button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getCurrentSession } from "@/server/auth";
+import {
+  requireActiveMember,
+} from "@/server/account-state";
 
 export default async function DashboardPage() {
-  const session = await getCurrentSession();
-
-  if (!session) {
-    redirect("/sign-in");
-  }
+  const {
+    session,
+  } = await requireActiveMember();
 
   return (
     <div className="space-y-6">
@@ -38,7 +36,9 @@ export default async function DashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Authenticated session</CardTitle>
+          <CardTitle>
+            Authenticated session
+          </CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-2 text-sm leading-6 text-muted-foreground">
@@ -51,8 +51,14 @@ export default async function DashboardPage() {
           </p>
 
           <p>
-            Member profiles, messaging, notifications, and statistics
-            will be added in later phases.
+            Your account is active and authorized
+            for the member application.
+          </p>
+
+          <p>
+            Member profiles, messaging,
+            notifications, and statistics will be
+            added in later phases.
           </p>
         </CardContent>
       </Card>

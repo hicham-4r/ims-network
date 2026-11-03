@@ -123,3 +123,28 @@ The authentication foundation now includes:
 - session revocation after successful password reset
 
 The application does not expose authentication or email-provider secrets to browser code. Production email delivery will require a verified application-owned domain.
+
+### Phase 9 account authorization
+
+Authentication and application authorization are separate boundaries.
+
+Protected application requests derive the current user from the validated Better Auth server session. Browser-provided user IDs, roles, or account states are not authorization evidence.
+
+Central authorization helpers include:
+
+- `requireApplicationAccount()`
+- `requireActiveMember()`
+- `requireAdmin()`
+- server-side account-state routing helpers
+
+Only an `ACTIVE` application account receives normal member access.
+
+The member layout enforces account state for member routes. Restricted states are routed to dedicated account-state pages.
+
+Administrator account transitions are validated server-side against their expected current state and produce audit records.
+
+Account-management transitions do not support an automatic `force` retry or implicit override.
+
+Rejected and suspended accounts have their current Better Auth database sessions revoked as part of the administrative transition.
+
+Account-state pages use route-level loading boundaries so fresh request-specific session and authorization checks remain uncached while still supporting streamed navigation.
