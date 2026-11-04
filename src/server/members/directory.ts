@@ -173,6 +173,8 @@ export async function listActiveMembers(
       program: profiles.program,
       graduationYear: profiles.graduationYear,
       bio: profiles.bio,
+      avatarUrl: profiles.avatarUrl,
+      avatarUpdatedAt: profiles.updatedAt,
     })
     .from(profiles)
     .innerJoin(
@@ -199,6 +201,8 @@ export async function listActiveMembers(
       program: row.program,
       graduationYear: row.graduationYear,
       bio: row.bio,
+        hasAvatar: Boolean(row.avatarUrl),
+        avatarVersion: row.avatarUpdatedAt.toISOString(),
     }));
 
   const lastVisibleRow =

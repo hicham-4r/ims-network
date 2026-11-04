@@ -157,3 +157,12 @@ Features such as Kubernetes, Kafka, microservices, GraphQL, and Elasticsearch ar
 ## License
 
 A license has not been selected yet.
+
+## Alumni Avatar Storage
+
+Phase 11 implements private Vercel Blob profile pictures
+with authenticated upload, server-side image validation,
+protected delivery, and replacement cleanup.
+
+See [Avatar Storage](./docs/avatar-storage.md)
+for implementation details and security limitations.

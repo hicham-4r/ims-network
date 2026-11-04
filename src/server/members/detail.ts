@@ -1,4 +1,4 @@
-﻿import { and, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { requireActiveMember } from "@/server/account-state";
 import { db } from "@/server/db";
@@ -26,6 +26,8 @@ export async function getActiveMemberById(userId: string) {
       program: profiles.program,
       graduationYear: profiles.graduationYear,
       bio: profiles.bio,
+      avatarUrl: profiles.avatarUrl,
+      avatarUpdatedAt: profiles.updatedAt,
     })
     .from(profiles)
     .innerJoin(

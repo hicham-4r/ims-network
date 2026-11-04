@@ -44,3 +44,5 @@ next-env.d.ts
 
 # Generated local project state handoff
 IMS_NETWORK_STATE_BUNDLE.txt
+.vercel
+.env*

@@ -1,4 +1,5 @@
-﻿import Link from "next/link";
+import Link from "next/link";
+import { MemberAvatar } from "@/components/members/member-avatar";
 import { notFound } from "next/navigation";
 
 import {
@@ -46,6 +47,16 @@ export default async function MemberDetailPage({
 
       <Card>
         <CardHeader>
+          <div className="flex items-center gap-5">
+            <MemberAvatar
+              userId={member.userId}
+              displayName={member.displayName}
+              hasAvatar={Boolean(member.avatarUrl)}
+              version={member.avatarUpdatedAt.toISOString()}
+              size="lg"
+            />
+            <div className="min-w-0">
+
           <CardTitle className="text-2xl">
             {member.displayName}
           </CardTitle>
@@ -53,7 +64,10 @@ export default async function MemberDetailPage({
           <CardDescription>
             ESITH · Morocco
           </CardDescription>
-        </CardHeader>
+
+            </div>
+          </div>
+</CardHeader>
 
         <CardContent className="space-y-8">
           <dl className="grid gap-6 sm:grid-cols-2">

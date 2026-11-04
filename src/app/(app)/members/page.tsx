@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MemberAvatar } from "@/components/members/member-avatar";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -182,6 +183,16 @@ export default async function MembersPage({
           {result.members.map((member) => (
             <Card key={member.userId}>
               <CardHeader>
+                <div className="flex items-center gap-3">
+                  <MemberAvatar
+                    userId={member.userId}
+                    displayName={member.displayName}
+                    hasAvatar={member.hasAvatar}
+                    version={member.avatarVersion}
+                    size="md"
+                  />
+                  <div className="min-w-0">
+
                 <CardTitle>
                   <Link
                     href={`/members/${encodeURIComponent(member.userId)}`}
@@ -194,7 +205,10 @@ export default async function MembersPage({
                 <CardDescription>
                   {member.program ?? "ESITH IMS alumnus"}
                 </CardDescription>
-              </CardHeader>
+
+                  </div>
+                </div>
+</CardHeader>
 
               <CardContent className="space-y-3 text-sm">
                 {member.graduationYear ? (

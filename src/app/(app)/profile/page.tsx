@@ -1,6 +1,7 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 import { ProfileForm } from "./profile-form";
+import { AvatarUploadForm } from "./avatar-upload-form";
 
 import {
   Card,
@@ -74,6 +75,13 @@ export default async function ProfilePage() {
           </CardHeader>
 
           <CardContent>
+            <AvatarUploadForm
+              userId={profile.userId}
+              displayName={profile.displayName}
+              hasAvatar={Boolean(profile.avatarUrl)}
+              version={profile.updatedAt.toISOString()}
+            />
+
             <ProfileForm
               profile={{
                 displayName:
