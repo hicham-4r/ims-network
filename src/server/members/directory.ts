@@ -16,6 +16,8 @@ import {
   profiles,
 } from "@/server/db/schema";
 import { normalizeSearchText } from "@/server/profile/normalize";
+import { checkRateLimit } from "@/server/redis/rate-limit";
+import { enforceMemberDirectoryRateLimit } from "./search-rate-limit";
 
 export const MEMBER_PAGE_SIZE = 12;
 
@@ -93,7 +95,7 @@ export async function listActiveMembers(
   input: DirectoryInput,
 ) {
   // Authentication and account authorization happen first.
-  await requireActiveMember();
+  const { session } = await requireActiveMember();
 
   const parsed = directoryInputSchema.safeParse(input);
 
@@ -127,6 +129,14 @@ export async function listActiveMembers(
   const cursor = parsed.data.cursor
     ? decodeCursor(parsed.data.cursor, q, year)
     : null;
+
+  const decision = await checkRateLimit(
+    "memberSearch",
+    session.user.id,
+    "allow",
+  );
+
+  enforceMemberDirectoryRateLimit(decision);
 
   const conditions: SQL[] = [
     eq(applicationUserState.status, "ACTIVE"),

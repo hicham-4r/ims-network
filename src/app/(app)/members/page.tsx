@@ -14,6 +14,7 @@ import {
   InvalidDirectoryQueryError,
   listActiveMembers,
 } from "@/server/members";
+import { MemberDirectoryRateLimitError } from "@/server/members/search-rate-limit";
 
 type SearchParams = {
   q?: string | string[];
@@ -46,6 +47,14 @@ export default async function MembersPage({
         return null;
       }
 
+      if (error instanceof MemberDirectoryRateLimitError) {
+        return {
+          rateLimited: true as const,
+          retryAfterSeconds: error.retryAfterSeconds,
+          unavailable: error.unavailable,
+        };
+      }
+
       throw error;
     },
   );
@@ -65,6 +74,30 @@ export default async function MembersPage({
             className="text-sm font-medium underline"
           >
             Clear filters
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if ("rateLimited" in result) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {result.unavailable
+              ? "Directory temporarily unavailable"
+              : "Too many directory requests"}
+          </CardTitle>
+          <CardDescription>
+            {result.unavailable
+              ? "Please try again shortly."
+              : `Please try again in ${result.retryAfterSeconds} seconds.`}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link href="/dashboard" className="underline">
+            Back to dashboard
           </Link>
         </CardContent>
       </Card>

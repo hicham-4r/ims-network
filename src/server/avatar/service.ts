@@ -2,6 +2,7 @@ import { and, eq, exists, isNull } from "drizzle-orm";
 
 import type { requireActiveMember } from "@/server/account-state";
 import { db } from "@/server/db";
+import { nextProfileUpdatedAt } from "@/server/profile/revision";
 import { applicationUserState, profiles } from "@/server/db/schema";
 
 import { prepareAvatarImage } from "./validation";
@@ -51,7 +52,7 @@ export async function replaceOwnAvatar(
       .update(profiles)
       .set({
         avatarUrl: newPath,
-        updatedAt: new Date(),
+        updatedAt: nextProfileUpdatedAt,
       })
       .where(
         and(

@@ -1,10 +1,13 @@
-﻿import { eq } from "drizzle-orm";
+import { and, eq, exists } from "drizzle-orm";
 
 import {
   requireActiveMember,
 } from "@/server/account-state";
 import { db } from "@/server/db";
+import { nextProfileUpdatedAt } from "@/server/profile/revision";
+import { checkRateLimit } from "@/server/redis/rate-limit";
 import {
+  applicationUserState,
   profiles,
 } from "@/server/db/schema";
 
@@ -16,6 +19,7 @@ import {
 import {
   profileUpdateSchema,
 } from "./validation";
+import { getProfileEditRateLimitMessage } from "./profile-edit-rate-limit";
 
 export class ProfileUpdateError extends Error {
   constructor(message: string) {
@@ -47,6 +51,19 @@ export async function updateOwnProfile(
   const {
     session,
   } = await requireActiveMember();
+
+  const rateLimit = await checkRateLimit(
+    "profileEdit",
+    session.user.id,
+    "allow",
+  );
+
+  const rateLimitMessage =
+    getProfileEditRateLimitMessage(rateLimit);
+
+  if (rateLimitMessage) {
+    throw new ProfileUpdateError(rateLimitMessage);
+  }
 
   const displayName =
     normalizeProfileText(
@@ -83,12 +100,30 @@ export async function updateOwnProfile(
 
       bio,
 
-      updatedAt: new Date(),
+      updatedAt: nextProfileUpdatedAt,
     })
     .where(
-      eq(
-        profiles.userId,
-        session.user.id,
+      and(
+        eq(profiles.userId, session.user.id),
+        exists(
+          db
+            .select({
+              userId: applicationUserState.userId,
+            })
+            .from(applicationUserState)
+            .where(
+              and(
+                eq(
+                  applicationUserState.userId,
+                  session.user.id,
+                ),
+                eq(
+                  applicationUserState.status,
+                  "ACTIVE",
+                ),
+              ),
+            ),
+        ),
       ),
     )
     .returning();

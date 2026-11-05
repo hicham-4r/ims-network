@@ -18,6 +18,8 @@
     "@base-ui/react": "^1.9.0",
     "@better-auth/drizzle-adapter": "^1.7.14",
     "@neondatabase/serverless": "^1.2.0",
+    "@upstash/ratelimit": "^2.2.0",
+    "@upstash/redis": "^1.41.0",
     "@vercel/blob": "^2.8.2",
     "better-auth": "^1.7.14",
     "class-variance-authority": "^0.7.1",
