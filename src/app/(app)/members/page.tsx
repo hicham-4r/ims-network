@@ -1,4 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+
+import { AccountAccessError } from "@/server/account-state/errors";
+import { redirectRestrictedAccount } from "@/server/account-state/routing";
+import { AuthenticationRequiredError } from "@/server/auth/session";
 import { MemberAvatar } from "@/components/members/member-avatar";
 
 import { Button } from "@/components/ui/button";
@@ -55,6 +60,19 @@ export default async function MembersPage({
         };
       }
 
+      if (error instanceof AuthenticationRequiredError) {
+        redirect("/sign-in");
+      }
+
+      if (
+        error instanceof AccountAccessError &&
+        error.code === "ACCOUNT_NOT_ACTIVE"
+      ) {
+        redirectRestrictedAccount(error.accountStatus);
+      }
+
+      // Unexpected errors (including database failures)
+      // must remain visible to error monitoring.
       throw error;
     },
   );
