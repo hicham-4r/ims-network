@@ -1,4 +1,4 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 
 const postgresUrlSchema = z
   .string()
@@ -33,6 +33,27 @@ const serverEnvSchema = z.object({
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
 
+function resolveBetterAuthUrl(
+  input: NodeJS.ProcessEnv,
+): string | undefined {
+  if (input.VERCEL_ENV !== "preview") {
+    return input.BETTER_AUTH_URL;
+  }
+
+  const hostname = input.VERCEL_URL;
+
+  if (
+    !hostname ||
+    !/^ims-network-[a-z0-9-]+\.vercel\.app$/i.test(hostname)
+  ) {
+    throw new Error(
+      "Missing or unrecognized Vercel Preview hostname.",
+    );
+  }
+
+  return `https://${hostname}`;
+}
+
 export function parseServerEnv(
   input: NodeJS.ProcessEnv,
 ): ServerEnv {
@@ -41,7 +62,7 @@ export function parseServerEnv(
     DATABASE_URL: input.DATABASE_URL,
     DATABASE_URL_POOLED: input.DATABASE_URL_POOLED,
     BETTER_AUTH_SECRET: input.BETTER_AUTH_SECRET,
-    BETTER_AUTH_URL: input.BETTER_AUTH_URL,
+    BETTER_AUTH_URL: resolveBetterAuthUrl(input),
     RESEND_API_KEY: input.RESEND_API_KEY,
     RESEND_FROM_EMAIL: input.RESEND_FROM_EMAIL,
   });

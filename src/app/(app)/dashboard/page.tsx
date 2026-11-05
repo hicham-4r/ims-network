@@ -14,6 +14,7 @@ import {
 export default async function DashboardPage() {
   const {
     session,
+    accountState,
   } = await requireActiveMember();
 
   return (
@@ -44,6 +45,14 @@ export default async function DashboardPage() {
           <Link href="/members" className="text-sm font-medium underline-offset-4 hover:underline">
             Members
           </Link>
+          {accountState.role === "ADMIN" && accountState.status === "ACTIVE" ? (
+            <Link
+              href="/admin/accounts"
+              className="text-sm font-medium underline-offset-4 hover:underline"
+            >
+              Admin Panel
+            </Link>
+          ) : null}
           <SignOutButton />
         </div>
       </div>
