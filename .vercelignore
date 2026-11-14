@@ -1,0 +1,9 @@
+# Local and sensitive files
+.env
+.env.*
+*.pem
+*.key
+
+# Local project audits and handoff bundles
+IMS_NETWORK_*.txt
+tools/audit-phase13-timestamps.ts

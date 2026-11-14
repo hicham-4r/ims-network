@@ -25,6 +25,7 @@ type SearchParams = {
   q?: string | string[];
   year?: string | string[];
   cursor?: string | string[];
+  chat?: string | string[];
 };
 
 function firstString(
@@ -122,6 +123,9 @@ export default async function MembersPage({
     );
   }
 
+  const chatUnavailable =
+    firstString(params.chat) === "unavailable";
+
   const nextParams = new URLSearchParams();
 
   if (result.q) {
@@ -138,6 +142,15 @@ export default async function MembersPage({
 
   return (
     <div className="space-y-8">
+      {chatUnavailable && (
+        <p
+          role="alert"
+          className="rounded-md border border-border bg-muted px-4 py-3 text-sm"
+        >
+          This conversation is unavailable.
+          The member may no longer be active.
+        </p>
+      )}
       <div>
         <p className="text-sm font-medium text-primary">
           IMS Network

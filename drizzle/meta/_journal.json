@@ -29,6 +29,20 @@
       "when": 1793668305628,
       "tag": "0003_steep_roulette",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793853312798,
+      "tag": "0004_wooden_randall",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794679532617,
+      "tag": "0005_soft_selene",
+      "breakpoints": true
     }
   ]
 }

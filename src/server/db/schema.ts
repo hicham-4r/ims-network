@@ -1,4 +1,4 @@
-﻿import {
+import {
   index,
   integer,
   jsonb,
@@ -11,6 +11,7 @@
 import { user } from "./auth-schema";
 
 export * from "./auth-schema";
+export * from "./messaging-schema";
 
 export const ACCOUNT_STATUS_VALUES = [
   "UNVERIFIED",

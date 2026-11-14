@@ -21,7 +21,11 @@ export type RateLimitKind =
   | "recovery"
   | "memberSearch"
   | "profileEdit"
-  | "messageSend";
+  | "messageSend"
+  | "conversationOpen"
+  | "conversationInbox"
+  | "messageHistory"
+  | "messageRead";
 
 function createLimiter(
   name: string,
@@ -69,6 +73,26 @@ const limiters = {
   messageSend: createLimiter(
     "message-send",
     Ratelimit.slidingWindow(20, "1 m"),
+  ),
+
+  conversationOpen: createLimiter(
+    "conversation-open",
+    Ratelimit.slidingWindow(20, "5 m"),
+  ),
+
+  conversationInbox: createLimiter(
+    "conversation-inbox",
+    Ratelimit.slidingWindow(60, "1 m"),
+  ),
+
+  messageHistory: createLimiter(
+    "message-history",
+    Ratelimit.slidingWindow(90, "1 m"),
+  ),
+
+  messageRead: createLimiter(
+    "message-read",
+    Ratelimit.slidingWindow(60, "1 m"),
   ),
 };
 

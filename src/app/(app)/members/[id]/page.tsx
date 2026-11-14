@@ -10,6 +10,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getActiveMemberById } from "@/server/members";
+import { requireActiveMember } from "@/server/account-state";
+
+import { startMemberConversation } from "./actions";
+import { StartChatSubmit } from "./start-chat-submit";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -25,6 +29,9 @@ export default async function MemberDetailPage({
   if (!member) {
     notFound();
   }
+
+  const { session } = await requireActiveMember();
+  const canMessage = session.user.id !== member.userId;
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
@@ -47,7 +54,7 @@ export default async function MemberDetailPage({
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-5">
+          <div className="flex flex-wrap items-center gap-5">
             <MemberAvatar
               userId={member.userId}
               displayName={member.displayName}
@@ -66,6 +73,18 @@ export default async function MemberDetailPage({
           </CardDescription>
 
             </div>
+
+            {canMessage && (
+              <form
+                action={startMemberConversation.bind(
+                  null,
+                  member.userId,
+                )}
+                className="sm:ml-auto"
+              >
+                <StartChatSubmit />
+              </form>
+            )}
           </div>
 </CardHeader>
 
