@@ -149,6 +149,10 @@ export const messages = pgTable(
       }),
 
     body: text("body").notNull(),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+    replyToMessageId: text("reply_to_message_id"),
+    senderReaction: text("sender_reaction"),
+    peerReaction: text("peer_reaction"),
 
     createdAt: timestamp("created_at", {
       withTimezone: true,
@@ -183,6 +187,15 @@ export const messages = pgTable(
         char_length(btrim(${table.body})) > 0
       `,
     ),
+
+    uniqueIndex("messages_id_conversation_unique").on(table.id, table.conversationId),
+    foreignKey({
+      name: "messages_reply_conversation_fk",
+      columns: [table.replyToMessageId, table.conversationId],
+      foreignColumns: [table.id, table.conversationId],
+    }).onDelete("restrict"),
+    check("messages_sender_reaction_chk", sql`${table.senderReaction} IS NULL OR ${table.senderReaction} IN ('like', 'love', 'laugh', 'wow', 'sad', 'fire')`),
+    check("messages_peer_reaction_chk", sql`${table.peerReaction} IS NULL OR ${table.peerReaction} IN ('like', 'love', 'laugh', 'wow', 'sad', 'fire')`),
 
     // Database-assigned sequence is the authoritative
     // cursor for newest-first message pagination.

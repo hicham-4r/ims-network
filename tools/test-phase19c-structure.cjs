@@ -1,0 +1,24 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Standalone regression test */
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const read = p => fs.readFileSync(p, "utf8");
+const service = read("src/server/privacy/data-service.ts");
+const route = read("src/app/api/privacy-data/route.ts");
+const form = read("src/components/privacy/privacy-data-form.tsx");
+assert.ok(route.indexOf("validateAuthPostHeaders(request") < route.indexOf("await boundAuthPostBody"));
+assert.ok(route.indexOf("`ip:${subject}`") < route.indexOf("await getCurrentSession()"));
+assert.match(route, /exportOwnData\(session\.user\.id, session\.session\.id, input\.before\)/);
+assert.match(route, /requestOwnDeletion\(session\.user\.id, session\.session\.id, input\.password\)/);
+assert.match(route, /no-store, private/);
+assert.match(service, /JOIN authorized a ON a\."id" = m\."sender_user_id"/);
+assert.match(service, /LIMIT \$\{EXPORT_PAGE_SIZE \+ 1\}/);
+assert.match(service, /m\."sequence" < \$\{before\}::bigint/);
+assert.match(service, /ctx\.password\.verify/);
+assert.match(service, /s\."role" = 'MEMBER'/);
+assert.match(service, /IS DISTINCT FROM \$\{owner\}::text/);
+assert.match(service, /ON CONFLICT \("id"\) DO NOTHING/);
+assert.doesNotMatch(service, /DELETE FROM|UPDATE "application_user_state"/);
+assert.doesNotMatch(form, /localStorage|sessionStorage|document\.cookie|console\./);
+assert.match(read("src/server/account-state/admin-query.ts"), /ACCOUNT_DELETION_REQUESTED/);
+assert.match(read("src/server/maintenance/run.ts"), /"action" <> 'ACCOUNT_DELETION_REQUESTED'/);
+console.log("PHASE 19C PRIVACY STRUCTURE: PASS");

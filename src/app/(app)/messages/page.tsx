@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
-import { requireActiveMember } from "@/server/account-state";
+import { requireActiveMemberPage } from "@/server/account-state/routing";
 import {
   MessagingReadBudgetError,
 } from "@/server/messaging/read-budget";
@@ -16,10 +16,9 @@ import {
   MessageHistoryError,
 } from "@/server/messaging/history";
 
-import {
-  MessageComposer,
-  ReadTracker,
-} from "./chat-controls";
+import { getActivityScope } from "@/server/messaging/activity";
+import { ChatThread } from "./chat-thread";
+import { ChatViewport, ConversationLink } from "./chat-viewport";
 
 import {
   getSelectedConversationSummary,
@@ -27,7 +26,10 @@ import {
 
 import { MemberAvatar } from "@/components/members/member-avatar";
 
+import { InboxFilter } from "./inbox-filter";
+import { LocalTime } from "./local-time";
 import styles from "./messages.module.css";
+import MessagesLoading from "./loading";
 
 export const metadata: Metadata = {
   title: "Messages | IMS Network",
@@ -63,14 +65,6 @@ function makeHref(query: {
   return encoded ? `/messages?${encoded}` : "/messages";
 }
 
-function timeLabel(iso: string) {
-  return new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "UTC",
-  }).format(new Date(iso));
-}
-
 function ReadBudgetNotice() {
   return (
     <main className={styles.page}>
@@ -82,7 +76,7 @@ function ReadBudgetNotice() {
             Too many requests or temporary service unavailability.
             Please try again shortly.
           </p>
-          <Link href="/members" className={styles.navigationLink}>
+          <Link prefetch={false} href="/members" className={styles.navigationLink}>
             Return to alumni directory
           </Link>
         </div>
@@ -100,7 +94,7 @@ async function MessagesContent({
   const inboxCursor = value(parameters.ib);
   const historyCursor = value(parameters.mh);
 
-  const { session } = await requireActiveMember();
+  const { session } = await requireActiveMemberPage();
 
   let inbox: Awaited<ReturnType<typeof getConversationInbox>>;
 
@@ -162,10 +156,9 @@ async function MessagesContent({
     <main className={styles.page}>
       <div className={styles.heading}>
         <div>
-          <p className={styles.eyebrow}>IMS NETWORK</p>
           <h1>Messages</h1>
           <p className={styles.subtitle}>
-            Your private conversations with IMS alumni.
+            Your conversations with IMS alumni. <Link prefetch={false} href="/privacy" className="underline">Messaging privacy</Link>
           </p>
         </div>
         <span className={styles.privacy}>
@@ -173,6 +166,7 @@ async function MessagesContent({
         </span>
       </div>
 
+      <ChatViewport key={`${requestedConversation ?? "inbox"}:${inboxCursor ?? ""}`} hasConversation={Boolean(selectedId)} initiallyChat={Boolean(requestedConversation)}>
       <div className={styles.shell}>
         <aside className={styles.sidebar} aria-label="Conversations">
           <div className={styles.sidebarHeader}>
@@ -185,8 +179,7 @@ async function MessagesContent({
             </span>
           </div>
 
-          <nav className={styles.conversationList}>
-            {inbox.conversations.length === 0 ? (
+          <InboxFilter empty={(
               <div className={styles.emptySidebar}>
                 <div className={styles.emptyIcon}>✉</div>
                 <strong>No conversations on this page</strong>
@@ -195,16 +188,15 @@ async function MessagesContent({
                   when you connect with another member.
                 </p>
               </div>
-            ) : (
-              inbox.conversations.map((conversation) => {
+            )} entries={inbox.conversations.map((conversation) => {
                 const active =
                   conversation.conversationId === selectedId;
 
                 const name = conversation.otherMember.displayName;
                 const preview = conversation.lastMessage;
 
-                return (
-                  <Link
+                return { id: conversation.conversationId, name, content: (
+                  <ConversationLink active={active}
                     key={conversation.conversationId}
                     href={makeHref({
                       c: conversation.conversationId,
@@ -215,7 +207,6 @@ async function MessagesContent({
                         ? `${styles.conversation} ${styles.active}`
                         : styles.conversation
                     }
-                    aria-current={active ? "page" : undefined}
                   >
                     <MemberAvatar
                       userId={conversation.otherMember.id}
@@ -228,7 +219,7 @@ async function MessagesContent({
                       <span className={styles.conversationTop}>
                         <strong>{name}</strong>
                         {preview && (
-                          <small>{timeLabel(preview.createdAt)}</small>
+                          <small><LocalTime iso={preview.createdAt} compact/></small>
                         )}
                       </span>
                       <span className={styles.conversationBottom}>
@@ -251,20 +242,18 @@ async function MessagesContent({
                         )}
                       </span>
                     </span>
-                  </Link>
-                );
-              })
-            )}
-          </nav>
+                  </ConversationLink>
+                ) };
+              })}/>
 
           <div className={styles.sidebarFooter}>
             {inboxCursor && (
-              <Link href="/messages" className={styles.navigationLink}>
+              <Link prefetch={false} href="/messages" className={styles.navigationLink}>
                 First inbox page
               </Link>
             )}
             {inbox.hasMore && inbox.nextCursor && (
-              <Link
+              <Link prefetch={false}
                 href={makeHref({
                   c: selectedId,
                   ib: inbox.nextCursor,
@@ -284,7 +273,7 @@ async function MessagesContent({
               <h2>Your conversations start here</h2>
               <p>
                 Select an existing conversation to read your messages.
-                New-conversation and sending controls are coming next.
+                Start a conversation from an alumni profile.
               </p>
             </div>
           ) : (
@@ -308,9 +297,9 @@ async function MessagesContent({
                 <span className={styles.secureLabel}>Members only</span>
               </header>
 
-              <div className={styles.history}>
+              <ChatThread key={`${selectedId}:${historyCursor ?? "latest"}`} conversationId={selectedId} activityScope={getActivityScope(selectedId, session.user.id)} actorId={session.user.id} messages={chronological} olderPage={Boolean(historyCursor)} unreadCount={selected?.unreadCount ?? 0} historyLinks={<>
                 {historyCursor && (
-                  <Link
+                  <Link prefetch={false}
                     className={styles.navigationLink}
                     href={makeHref({
                       c: selectedId,
@@ -322,7 +311,7 @@ async function MessagesContent({
                 )}
 
                 {history?.hasMore && history.nextCursor && (
-                  <Link
+                  <Link prefetch={false}
                     className={styles.olderMessages}
                     href={makeHref({
                       c: selectedId,
@@ -334,58 +323,13 @@ async function MessagesContent({
                   </Link>
                 )}
 
-                {chronological.length === 0 ? (
-                  <div className={styles.noMessages}>
-                    <div className={styles.emptyIconLarge}>✉</div>
-                    <h3>No messages on this page</h3>
-                    <p>Your conversation history is empty.</p>
-                  </div>
-                ) : (
-                  <ol className={styles.messageList}>
-                    {chronological.map((message) => {
-                      const own =
-                        message.senderUserId === session.user.id;
+              </>}/>
 
-                      return (
-                        <li
-                          key={message.id}
-                          className={
-                            own
-                              ? `${styles.messageRow} ${styles.ownRow}`
-                              : styles.messageRow
-                          }
-                        >
-                          <div
-                            className={
-                              own
-                                ? `${styles.bubble} ${styles.ownBubble}`
-                                : styles.bubble
-                            }
-                          >
-                            <p>{message.body}</p>
-                            <time dateTime={message.createdAt}>
-                              {timeLabel(message.createdAt)} UTC
-                            </time>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                )}
-                {!historyCursor && selected && history?.messages[0] && (
-                  <ReadTracker
-                    conversationId={selectedId}
-                    messageId={history.messages[0].id}
-                    unreadCount={selected.unreadCount}
-                  />
-                )}
-              </div>
-
-              <MessageComposer conversationId={selectedId} />
             </>
           )}
         </section>
       </div>
+      </ChatViewport>
     </main>
   );
 }
@@ -397,14 +341,7 @@ export default function MessagesPage({
 }) {
   return (
     <Suspense
-      fallback={
-        <main className={styles.page}>
-          <div className={styles.heading}>
-            <h1>Messages</h1>
-          </div>
-          <p role="status">Loading your private inbox...</p>
-        </main>
-      }
+      fallback={<MessagesLoading/>}
     >
       <MessagesContent searchParams={searchParams} />
     </Suspense>

@@ -1,258 +1,53 @@
-﻿import {
-  approveAccount,
-  rejectAccount,
-  restoreAccount,
-  suspendAccount,
-} from "./actions";
-
+import Link from "next/link";
+import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  getAdminAccountsPageData,
-} from "@/server/account-state";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getAdminAccountsPageData } from "@/server/account-state/admin-page";
+import { ADMIN_STATUSES, AdminQueryError, type AdminParams } from "@/server/account-state/admin-query";
+import { AdminNav } from "../admin-nav";
+import { AccountControls } from "./account-controls";
+import { applicationRoleLabel } from "@/server/account-state/owner";
 
-function formatDate(
-  value: Date | null,
-) {
-  if (!value) {
-    return "—";
-  }
-
-  return value.toLocaleString();
+export default function AdminAccountsPage({ searchParams }: { searchParams: Promise<AdminParams> }) {
+  return <Suspense fallback={<p role="status">Loading accounts…</p>}><AccountsContent searchParams={searchParams} /></Suspense>;
 }
-
-export default async function AdminAccountsPage() {
-  const {
-    session,
-    accounts,
-  } = await getAdminAccountsPageData();
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-sm font-medium text-primary">
-          Administration
-        </p>
-
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-          Account management
-        </h1>
-
-        <p className="mt-3 max-w-3xl text-muted-foreground">
-          Review pending accounts and manage member
-          access. Every state-changing action is
-          authorized on the server and recorded in
-          the audit log.
-        </p>
-      </div>
-
-      <div className="grid gap-4">
-        {accounts.map((account) => {
-          const isCurrentAdmin =
-            account.userId === session.user.id;
-
-          return (
-            <Card key={account.userId}>
-              <CardHeader>
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <CardTitle>
-                      {account.name}
-                    </CardTitle>
-
-                    <CardDescription>
-                      {account.email}
-                    </CardDescription>
-                  </div>
-
-                  <div className="text-sm text-muted-foreground">
-                    {account.status} · {account.role}
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="space-y-5">
-                <dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                  <div>
-                    <dt className="text-muted-foreground">
-                      Email verified
-                    </dt>
-                    <dd className="font-medium">
-                      {account.emailVerified
-                        ? "Yes"
-                        : "No"}
-                    </dd>
-                  </div>
-
-                  <div>
-                    <dt className="text-muted-foreground">
-                      Registered
-                    </dt>
-                    <dd className="font-medium">
-                      {formatDate(
-                        account.createdAt,
-                      )}
-                    </dd>
-                  </div>
-
-                  <div>
-                    <dt className="text-muted-foreground">
-                      Approved
-                    </dt>
-                    <dd className="font-medium">
-                      {formatDate(
-                        account.approvedAt,
-                      )}
-                    </dd>
-                  </div>
-
-                  <div>
-                    <dt className="text-muted-foreground">
-                      Last state update
-                    </dt>
-                    <dd className="font-medium">
-                      {formatDate(
-                        account.updatedAt,
-                      )}
-                    </dd>
-                  </div>
-                </dl>
-
-                {account.rejectionReason ? (
-                  <p className="text-sm text-muted-foreground">
-                    Rejection reason:{" "}
-                    <span className="text-foreground">
-                      {account.rejectionReason}
-                    </span>
-                  </p>
-                ) : null}
-
-                {account.suspensionReason ? (
-                  <p className="text-sm text-muted-foreground">
-                    Suspension reason:{" "}
-                    <span className="text-foreground">
-                      {account.suspensionReason}
-                    </span>
-                  </p>
-                ) : null}
-
-                {account.status ===
-                "PENDING_APPROVAL" ? (
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <form action={approveAccount}>
-                      <input
-                        type="hidden"
-                        name="targetUserId"
-                        value={account.userId}
-                      />
-
-                      <Button
-                        type="submit"
-                        className="w-full"
-                      >
-                        Approve account
-                      </Button>
-                    </form>
-
-                    <form
-                      action={rejectAccount}
-                      className="space-y-3"
-                    >
-                      <input
-                        type="hidden"
-                        name="targetUserId"
-                        value={account.userId}
-                      />
-
-                      <textarea
-                        name="reason"
-                        required
-                        maxLength={500}
-                        placeholder="Reason for rejection"
-                        className="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      />
-
-                      <Button
-                        type="submit"
-                        variant="destructive"
-                        className="w-full"
-                      >
-                        Reject account
-                      </Button>
-                    </form>
-                  </div>
-                ) : null}
-
-                {account.status === "ACTIVE" &&
-                account.role === "MEMBER" ? (
-                  <form
-                    action={suspendAccount}
-                    className="space-y-3"
-                  >
-                    <input
-                      type="hidden"
-                      name="targetUserId"
-                      value={account.userId}
-                    />
-
-                    <textarea
-                      name="reason"
-                      required
-                      maxLength={500}
-                      placeholder="Reason for suspension"
-                      className="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    />
-
-                    <Button
-                      type="submit"
-                      variant="destructive"
-                    >
-                      Suspend member
-                    </Button>
-                  </form>
-                ) : null}
-
-                {account.status ===
-                "SUSPENDED" ? (
-                  <form action={restoreAccount}>
-                    <input
-                      type="hidden"
-                      name="targetUserId"
-                      value={account.userId}
-                    />
-
-                    <Button type="submit">
-                      Restore member
-                    </Button>
-                  </form>
-                ) : null}
-
-                {isCurrentAdmin ? (
-                  <p className="text-xs text-muted-foreground">
-                    This is your current administrator
-                    account. Self-suspension is blocked
-                    server-side.
-                  </p>
-                ) : null}
-              </CardContent>
-            </Card>
-          );
-        })}
-
-        {accounts.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-sm text-muted-foreground">
-              No application accounts found.
-            </CardContent>
-          </Card>
-        ) : null}
-      </div>
+async function AccountsContent({ searchParams }: { searchParams: Promise<AdminParams> }) {
+  const params = await searchParams;
+  const data = await getAdminAccountsPageData(params).catch((error: unknown) => {
+    if (error instanceof AdminQueryError) return null;
+    throw error;
+  });
+  if (!data) return <div><p role="alert">Invalid account search or page cursor.</p><Link prefetch={false} href="/admin/accounts">Reset filters</Link></div>;
+  const { session, accounts, query, nextCursor } = data;
+  const filters = new URLSearchParams({ status: query.status, q: query.q });
+  const next = new URLSearchParams(filters);
+  if (nextCursor) next.set("cursor", nextCursor);
+  return <div className="ims-admin-workspace">
+    <AdminNav />
+    <header className="ims-page-heading"><div><h1>Account management</h1>
+      <p className="mt-2 text-sm text-muted-foreground">Email ownership is not verified automatically. Confirm eligibility independently before approval. All successful state changes are audited.</p></div></header>
+    <form action="/admin/accounts" method="get" className="ims-panel flex flex-wrap items-end gap-3 p-4">
+      <label className="grid gap-1 text-sm">Name or email prefix<input name="q" type="search" maxLength={80} defaultValue={query.q} className="rounded-md border bg-background p-2" /></label>
+      <label className="grid gap-1 text-sm">Account status<select name="status" defaultValue={query.status} className="rounded-md border bg-background p-2">
+        <option value="ALL">All accounts</option>{ADMIN_STATUSES.map(status => <option key={status}>{status}</option>)}
+      </select></label><Button type="submit">Filter</Button>
+      <Link href="/admin/accounts" prefetch={false} className="text-sm underline">Reset</Link>
+    </form>
+    <p className="text-sm text-muted-foreground">{accounts.length} accounts on this page · stable ID order</p>
+    <div className="ims-admin-account-grid">{accounts.map(account => <Card key={account.userId} className="ims-admin-account-card">
+      <CardHeader><CardTitle className="break-words">{account.name}</CardTitle><p className="break-all text-sm text-muted-foreground">{account.email}</p><div className="ims-account-tags"><span className="ims-account-status" data-status={account.status}>{account.status.replaceAll("_", " ")}</span><span>{applicationRoleLabel(account)}</span></div></CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm">Registered {account.createdAt.toISOString().slice(0, 10)}</p>
+        {account.rejectionReason && <p className="break-words text-sm">Rejection reason: {account.rejectionReason}</p>}
+        {account.suspensionReason && <p className="break-words text-sm">Suspension reason: {account.suspensionReason}</p>}
+        <Link href={`/admin/accounts/${encodeURIComponent(account.userId)}`} prefetch={false} className="inline-block text-sm font-medium underline">Account details</Link>
+        <AccountControls account={account} actorId={session.user.id} />
+      </CardContent></Card>)}
+      {accounts.length === 0 && <p className="rounded-md border p-5 text-sm">No accounts match these filters.</p>}
     </div>
-  );
+    <nav aria-label="Account pages" className="flex gap-5 text-sm">
+      {query.afterId && <Link prefetch={false} href={`/admin/accounts?${filters}`} className="underline">First page</Link>}
+      {nextCursor && <Link prefetch={false} href={`/admin/accounts?${next}`} className="underline">Next page →</Link>}
+    </nav>
+  </div>;
 }

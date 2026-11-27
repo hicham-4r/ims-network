@@ -6,6 +6,7 @@ import {
 import { neon } from "@neondatabase/serverless";
 import { z } from "zod";
 
+import { parseReaction, quotePreview } from "@/lib/chat-interactions";
 import { serverEnv } from "@/server/env";
 
 const sql = neon(serverEnv.DATABASE_URL_POOLED);
@@ -168,7 +169,7 @@ export async function getConversationHistoryForActor(
   // No message history is cached in Redis.
   const rows = await sql`
     WITH authorized_conversation AS (
-      SELECT c."id"
+      SELECT c."id", COALESCE(other_member."last_read_message_sequence", 0::bigint) AS peer_read_sequence
       FROM "conversations" AS c
 
       INNER JOIN "conversation_members" AS actor_member
@@ -214,7 +215,11 @@ export async function getConversationHistoryForActor(
       recent."sequence" AS message_sequence,
       recent."sender_user_id" AS sender_user_id,
       recent."body" AS message_body,
-      recent."created_at" AS message_created_at
+      recent."created_at" AS message_created_at,
+      CASE WHEN recent."sender_user_id" = ${actorUserId} THEN recent."client_message_id" ELSE NULL END AS own_client_message_id,
+      a.peer_read_sequence,
+      recent."delivered_at", recent."reply_to_message_id", quoted."body" AS quoted_body, quoted."sender_user_id" AS quoted_sender,
+      recent."sender_reaction", recent."peer_reaction"
 
     FROM authorized_conversation AS a
 
@@ -224,7 +229,8 @@ export async function getConversationHistoryForActor(
         m."sequence",
         m."sender_user_id",
         m."body",
-        m."created_at"
+        m."created_at",
+        m."client_message_id", m."delivered_at", m."reply_to_message_id", m."sender_reaction", m."peer_reaction"
 
       FROM "messages" AS m
 
@@ -240,6 +246,8 @@ export async function getConversationHistoryForActor(
       LIMIT ${MESSAGE_PAGE_SIZE + 1}
     ) AS recent ON TRUE
 
+    LEFT JOIN "messages" quoted ON quoted."id" = recent."reply_to_message_id"
+      AND quoted."conversation_id" = a."id"
     ORDER BY recent."sequence" DESC NULLS LAST
   `;
 
@@ -292,8 +300,19 @@ export async function getConversationHistoryForActor(
       );
     }
 
+    const peerReadSequence = Number(row.peer_read_sequence);
+    if (!Number.isSafeInteger(peerReadSequence) || peerReadSequence < 0) {
+      throw new Error("Unexpected read cursor.");
+    }
+    const own = row.sender_user_id === actorUserId;
     return {
       id: row.message_id,
+      clientMessageId: own && typeof row.own_client_message_id === "string" ? row.own_client_message_id : null,
+      readByPeer: own && peerReadSequence >= sequence,
+      delivered: row.delivered_at != null,
+      reply: typeof row.quoted_body === "string" && typeof row.reply_to_message_id === "string" ? { id: row.reply_to_message_id, body: quotePreview(row.quoted_body), own: row.quoted_sender === actorUserId } : null,
+      myReaction: parseReaction(own ? row.sender_reaction : row.peer_reaction),
+      peerReaction: parseReaction(own ? row.peer_reaction : row.sender_reaction),
       sequence,
       senderUserId: row.sender_user_id,
       body: row.message_body,

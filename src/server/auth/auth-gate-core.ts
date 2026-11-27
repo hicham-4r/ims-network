@@ -26,7 +26,7 @@ export function getAuthLimitKind(
 
   if (
     path === "/api/auth/request-password-reset" ||
-    path === "/api/auth/send-verification-email"
+    path === "/api/auth/reset-password"
   ) {
     return "recovery";
   }
@@ -143,7 +143,7 @@ export async function evaluateAuthRequestGate(
     // multiple endpoints share the same policy.
     // The Redis adapter HMACs this subject.
     const scopedSubject =
-      `${subject}:${new URL(request.url).pathname}`;
+      `${subject}:${new URL(request.url).pathname.replace(/\/+$/, "")}`;
 
     const decision = await check(
       kind,

@@ -99,6 +99,11 @@ export async function updateOwnProfile(
         parsed.data.graduationYear,
 
       bio,
+      jobTitle: normalizeOptionalProfileText(parsed.data.jobTitle),
+      company: normalizeOptionalProfileText(parsed.data.company),
+      location: normalizeOptionalProfileText(parsed.data.location),
+      skills: normalizeOptionalProfileText(parsed.data.skills),
+      mentorship: normalizeOptionalProfileText(parsed.data.mentorship),
 
       updatedAt: nextProfileUpdatedAt,
     })

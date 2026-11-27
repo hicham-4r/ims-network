@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { AccountAccessError } from "@/server/account-state/errors";
 import { redirectRestrictedAccount } from "@/server/account-state/routing";
 import { AuthenticationRequiredError } from "@/server/auth/session";
-import { MemberAvatar } from "@/components/members/member-avatar";
+import { MemberDirectoryTable } from "@/components/members/member-directory-table";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +25,7 @@ type SearchParams = {
   q?: string | string[];
   year?: string | string[];
   cursor?: string | string[];
+  mentorship?: string | string[];
   chat?: string | string[];
 };
 
@@ -45,6 +46,7 @@ export default async function MembersPage({
     q: firstString(params.q),
     year: firstString(params.year),
     cursor: firstString(params.cursor),
+    mentorship: firstString(params.mentorship),
   };
 
   const result = await listActiveMembers(input).catch(
@@ -88,7 +90,7 @@ export default async function MembersPage({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Link
+          <Link prefetch={false}
             href="/members"
             className="text-sm font-medium underline"
           >
@@ -115,7 +117,7 @@ export default async function MembersPage({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Link href="/dashboard" className="underline">
+          <Link prefetch={false} href="/dashboard" className="underline">
             Back to dashboard
           </Link>
         </CardContent>
@@ -136,12 +138,14 @@ export default async function MembersPage({
     nextParams.set("year", String(result.year));
   }
 
+  if (result.mentorship) nextParams.set("mentorship", result.mentorship);
+
   if (result.nextCursor) {
     nextParams.set("cursor", result.nextCursor);
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {chatUnavailable && (
         <p
           role="alert"
@@ -157,12 +161,12 @@ export default async function MembersPage({
         </p>
 
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-          ESITH IMS alumni directory
+          Alumni directory
         </h1>
 
         <p className="mt-3 text-muted-foreground">
           Connect with active ESITH IMS alumni by name,
-          program, or graduation year.
+          program, professional details, or graduation year.
         </p>
       </div>
 
@@ -170,8 +174,7 @@ export default async function MembersPage({
         <CardHeader>
           <CardTitle>Find members</CardTitle>
           <CardDescription>
-            Search matches the beginning of a name
-            or program.
+            Search matches the beginning of a name, program, company, role, location or skills field.
           </CardDescription>
         </CardHeader>
 
@@ -179,7 +182,7 @@ export default async function MembersPage({
           <form
             action="/members"
             method="get"
-            className="flex flex-col gap-4 sm:flex-row sm:items-end"
+            className="flex flex-wrap items-end gap-4"
           >
             <div className="min-w-0 flex-1 space-y-2">
               <label
@@ -192,7 +195,7 @@ export default async function MembersPage({
               <Input
                 id="member-search"
                 name="q"
-                placeholder="Name or program"
+                placeholder="Name, company, role or skills"
                 maxLength={80}
                 defaultValue={result.q}
               />
@@ -217,11 +220,17 @@ export default async function MembersPage({
               />
             </div>
 
+            <div className="space-y-2 min-w-0">
+              <label htmlFor="mentorship" className="text-sm font-medium">Mentorship</label>
+              <select id="mentorship" name="mentorship" defaultValue={result.mentorship} className="block min-h-10 max-w-full rounded-md border bg-background px-3 text-sm">
+                <option value="">Any availability</option><option value="open">Open to mentor</option><option value="seeking">Seeking a mentor</option><option value="unavailable">Unavailable</option>
+              </select>
+            </div>
             <Button type="submit">
               Search
             </Button>
 
-            <Link
+            <Link prefetch={false}
               href="/members"
               className="pb-2 text-center text-sm underline-offset-4 hover:underline"
             >
@@ -242,69 +251,13 @@ export default async function MembersPage({
         </p>
       </div>
 
-      {result.members.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          {result.members.map((member) => (
-            <Card key={member.userId}>
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <MemberAvatar
-                    userId={member.userId}
-                    displayName={member.displayName}
-                    hasAvatar={member.hasAvatar}
-                    version={member.avatarVersion}
-                    size="md"
-                  />
-                  <div className="min-w-0">
-
-                <CardTitle>
-                  <Link
-                    href={`/members/${encodeURIComponent(member.userId)}`}
-                    className="underline-offset-4 hover:underline focus-visible:underline"
-                  >
-                    {member.displayName}
-                  </Link>
-                </CardTitle>
-
-                <CardDescription>
-                  {member.program ?? "ESITH IMS alumnus"}
-                </CardDescription>
-
-                  </div>
-                </div>
-</CardHeader>
-
-              <CardContent className="space-y-3 text-sm">
-                {member.graduationYear ? (
-                  <p>
-                    <span className="text-muted-foreground">
-                      Graduation year:{" "}
-                    </span>
-                    {member.graduationYear}
-                  </p>
-                ) : null}
-
-                {member.bio ? (
-                  <p className="line-clamp-3 whitespace-pre-wrap text-muted-foreground">
-                    {member.bio}
-                  </p>
-                ) : null}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <Card>
-          <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            No active members match these filters.
-          </CardContent>
-        </Card>
-      )}
+      <MemberDirectoryTable members={result.members} />
 
       {result.nextCursor ? (
         <div className="flex justify-center">
           <Link
             href={`/members?${nextParams.toString()}`}
+            prefetch={false}
             className="rounded-md border px-5 py-2 text-sm font-medium hover:bg-muted"
           >
             Next page

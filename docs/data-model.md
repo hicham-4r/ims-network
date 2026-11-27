@@ -1,5 +1,14 @@
 # IMS Network Data Model
 
+> Current Phase 22 schema: nine migrations, including professional profiles, chat interactions, browser delivery and moderation. The following historical notes describe earlier stages; see `drizzle/meta/0008_snapshot.json` and `phase22-community-upgrade.md` for current schema and semantics. Production will use a fresh isolated database unless a verified legacy export becomes available.
+
+> 2026-11-23 decision: mandatory email verification has been removed.
+> Newly registered accounts begin as PENDING_APPROVAL, and only admins can
+> grant ACTIVE status. The historical Phase 8/9 verification notes below
+> describe the old implementation. The UNVERIFIED enum and user.email_verified
+> column are retained for database compatibility, not as authorization gates.
+> See ADR 0006 for the current policy.
+
 ## ESITH IMS alumni scope (2026-11-03)
 
 IMS Network is for alumni of ESITH's IMS program in Morocco. Public profile

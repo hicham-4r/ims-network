@@ -1,3 +1,4 @@
+import { reportFailure } from "@/server/observability/safe-events";
 import { and, eq, exists, isNull } from "drizzle-orm";
 
 import type { requireActiveMember } from "@/server/account-state";
@@ -26,7 +27,7 @@ async function cleanupAvatar(pathname: string) {
   } catch {
     // Cleanup failures must not corrupt the committed profile.
     // A future maintenance task can remove abandoned assets.
-    console.warn("Avatar storage cleanup was unsuccessful.");
+    reportFailure("avatar_cleanup_failed");
   }
 }
 

@@ -1,21 +1,15 @@
-﻿"use client";
+"use client";
 
-import { useEffect } from "react";
 import { AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
 export default function ErrorPage({
-  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    console.error("Route error:", error);
-  }, [error]);
-
   return (
     <main className="flex min-h-[60vh] items-center justify-center px-4 py-12">
       <div className="w-full max-w-md rounded-xl border bg-card p-6 text-card-foreground shadow-sm">

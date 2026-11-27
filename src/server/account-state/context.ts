@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   getCurrentSession,
 } from "@/server/auth";
 import {
@@ -24,8 +24,6 @@ export async function loadApplicationAccountContext(
   ] = await Promise.all([
     ensureApplicationUserState({
       id: session.user.id,
-      emailVerified:
-        session.user.emailVerified,
     }),
 
     ensureUserProfile({

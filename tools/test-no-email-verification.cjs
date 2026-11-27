@@ -1,0 +1,41 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Standalone repository test */
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const root = path.resolve(__dirname, "..");
+const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
+const auth = read("src/server/auth/auth.ts");
+const state = read("src/server/account-state/service.ts");
+const routes = read("src/server/account-state/routing.ts");
+const signup = read("src/app/(auth)/sign-up/page.tsx");
+const signin = read("src/app/(auth)/sign-in/page.tsx");
+const admin = read("src/server/account-state/admin.ts");
+const ws = read("src/server/realtime/socket-access-core.ts");
+const wsdb = read("src/server/realtime/socket-access-db.ts");
+const handler = read("src/app/api/auth/[...all]/route.ts");
+
+assert.match(auth, /requireEmailVerification: false/);
+assert.match(auth, /autoSignIn: false/);
+assert.match(auth, /createPendingAccountState\(createdUser\.id\)/);
+assert.doesNotMatch(auth, /sendVerificationEmail|sendOnSignUp|sendOnSignIn/);
+assert.match(auth, /sendResetPassword/);
+assert.match(state, /status: "PENDING_APPROVAL"/);
+assert.match(state, /onConflictDoNothing/);
+assert.match(state, /state\.status === "UNVERIFIED"/);
+assert.match(state, /eq\(\s*applicationUserState\.status,\s*"UNVERIFIED"/);
+assert.match(routes, /case "UNVERIFIED":\s*redirect\("\/pending-approval"\)/);
+assert.doesNotMatch(signup, /\/verify-email/);
+assert.doesNotMatch(signin, /\/verify-email/);
+assert.match(signup, /Registration request received/);
+assert.match(admin, /fromStatus: "PENDING_APPROVAL"/);
+assert.match(admin, /auditAction: "ACCOUNT_APPROVED"/);
+assert.match(ws, /record\.accountStatus === "ACTIVE"/);
+assert.match(ws, /record\.sessionId === identity\.sessionId/);
+assert.doesNotMatch(ws, /emailVerified/);
+assert.doesNotMatch(wsdb, /emailVerified|userTable/);
+assert.match(handler, /isRemovedVerificationRoute/);
+assert.match(handler, /status: 404/);
+assert.equal(fs.existsSync(path.join(root, "src/app/(auth)/verify-email/page.tsx")), false);
+assert.equal(fs.existsSync(path.join(root, "src/server/email/verification.ts")), false);
+console.log("PHASE 16 EMAIL VERIFICATION REMOVAL: STRUCTURAL CHECKS PASS");

@@ -66,6 +66,11 @@ export const profileUpdateSchema = z.object({
   graduationYear: graduationYearSchema,
 
   bio: optionalText(1000),
+  jobTitle: optionalText(120),
+  company: optionalText(120),
+  location: optionalText(120),
+  skills: optionalText(240),
+  mentorship: z.preprocess(value => value === "" || value == null ? null : value, z.enum(["open", "seeking", "unavailable"]).nullable()),
 });
 
 export type ProfileUpdateInput =

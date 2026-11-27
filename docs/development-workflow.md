@@ -1,77 +1,9 @@
-﻿# Development Workflow
+# Development workflow
 
-## Default Branch
+Canonical branch: main. Use focused feature/fix branches and Conventional Commit messages. The existing development branch may carry several guarded changes; review and commit them together only after validation. Never force-push or reset destructively to recover routine changes.
 
-The canonical default branch is:
+## Checks
 
-    main
+Install the existing lockfile with `npm ci --no-audit --no-fund` if needed. Run `node tools/ci/validate.cjs`, `node tools/ci/check-migrations.cjs --exact`, and `git diff --check`. Review the full diff, stage intended files only and run `node tools/ci/check-repository.cjs --staged`. Dependency advisories are reviewed separately via `npm audit --audit-level=high`. No secrets, data dumps or private screenshots should be committed.
 
-Direct work on main should remain small and controlled.
-
-## Feature Branches
-
-Use focused branch names such as:
-
-    feat/<feature>
-    fix/<issue>
-    docs/<topic>
-    test/<topic>
-    refactor/<topic>
-
-Examples:
-
-    feat/member-directory
-    fix/message-pagination
-    docs/security-model
-
-## Commit Messages
-
-Use clear Conventional-Commit-style messages.
-
-Examples:
-
-    chore(repo): scaffold Next.js application
-    feat(auth): add account approval state
-    fix(chat): correct message pagination
-    docs(adr): record Redis strategy
-    test(auth): cover suspended account access
-
-Avoid vague commit messages such as:
-
-    update
-    stuff
-    works
-    final
-    fix
-
-## Before Committing
-
-Inspect the repository:
-
-    git status --short
-
-Run the relevant verification commands:
-
-    npm run lint
-    npm run typecheck
-    npm run build
-
-Review the diff before committing.
-
-## Safety
-
-Do not commit:
-
-- .env.local
-- credentials
-- API keys
-- database URLs
-- tokens
-- cookies
-- private keys
-- production data
-- database dumps
-
-Do not use git reset --hard as a casual recovery method.
-
-Prefer focused restoration, git diff, and git revert where appropriate.
+Runtime testing uses protected Vercel Preview until Development schema is explicitly synchronized. No automatic Production deployments or migrations. See [CI and release runbook](phase23-release-runbook.md) and [environment checklist](phase23-environments.md). Keep previous guarded ZIPs/backups outside Git. Phase 23 does not modify application code, environment values, database schema or provider settings.

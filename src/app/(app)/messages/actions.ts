@@ -1,5 +1,8 @@
 "use server";
 
+import { acknowledgeDelivery } from "@/server/messaging/delivery";
+import { publishChatActivity } from "@/server/messaging/activity";
+import { setMessageReaction } from "@/server/messaging/reactions";
 import { revalidatePath } from "next/cache";
 
 import {
@@ -17,7 +20,7 @@ import {
 } from "@/server/messaging/reads";
 
 export type ChatSendResult =
-  | { ok: true }
+  | { ok: true; messageId: string }
   | { ok: false; message: string };
 
 export async function sendChatMessage(
@@ -27,11 +30,11 @@ export async function sendChatMessage(
     // Better Auth, membership validation, message length,
     // Redis rate limiting and idempotency are all enforced
     // by the existing server-side messaging service.
-    await sendDirectMessage(input);
+    const persisted = await sendDirectMessage(input);
 
     revalidatePath("/messages");
 
-    return { ok: true };
+    return { ok: true, messageId: persisted.id };
   } catch (error) {
     if (!(error instanceof MessageSendError)) {
       throw error;
@@ -95,4 +98,20 @@ export async function markChatRead(
 
     throw error;
   }
+}
+
+export async function reactToChatMessage(input: unknown): Promise<{ ok: boolean }> {
+  try {
+    const ok = await setMessageReaction(input);
+    if (ok) revalidatePath("/messages");
+    return { ok };
+  } catch { return { ok: false }; }
+}
+
+export async function signalChatActivity(input: unknown): Promise<{ ok: boolean }> {
+  try { return {ok: await publishChatActivity(input)}; } catch { return {ok:false}; }
+}
+
+export async function acknowledgeChatDelivery(input: unknown): Promise<{ok:boolean}> {
+  try {return {ok:await acknowledgeDelivery(input)};} catch {return {ok:false};}
 }

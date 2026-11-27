@@ -1,4 +1,5 @@
 import "server-only";
+import { reportFailure } from "@/server/observability/safe-events";
 
 import { createHmac } from "node:crypto";
 import { Ratelimit } from "@upstash/ratelimit";
@@ -16,11 +17,21 @@ import {
 } from "./rate-limit-core";
 
 export type RateLimitKind =
+  | "privacyExport"
+  | "privacyDeletion"
+  | "recoveryCode"
+  | "ownerRole"
+  | "avatarUpload"
+  | "adminModeration"
   | "auth"
   | "signup"
   | "recovery"
   | "memberSearch"
   | "profileEdit"
+  | "messageReport"
+  | "chatActivity"
+  | "messageDelivery"
+  | "messageReaction"
   | "messageSend"
   | "conversationOpen"
   | "conversationInbox"
@@ -45,6 +56,12 @@ function createLimiter(
 }
 
 const limiters = {
+  privacyExport: createLimiter("privacy-export", Ratelimit.fixedWindow(20, "10 m")),
+  privacyDeletion: createLimiter("privacy-deletion", Ratelimit.fixedWindow(5, "10 m")),
+  recoveryCode: createLimiter("recovery-code", Ratelimit.fixedWindow(5, "10 m")),
+  avatarUpload: createLimiter("avatar-upload", Ratelimit.fixedWindow(5, "10 m")),
+  adminModeration: createLimiter("admin-moderation", Ratelimit.fixedWindow(30, "5 m")),
+  ownerRole: createLimiter("owner-role", Ratelimit.slidingWindow(5, "10 m")),
   auth: createLimiter(
     "auth",
     Ratelimit.slidingWindow(90, "10 m"),
@@ -69,6 +86,11 @@ const limiters = {
     "profile-edit",
     Ratelimit.fixedWindow(12, "10 m"),
   ),
+
+  messageReport: createLimiter("message-report", Ratelimit.fixedWindow(5, "10 m")),
+  chatActivity: createLimiter("chat-activity", Ratelimit.fixedWindow(8, "1 m")),
+  messageDelivery: createLimiter("message-delivery", Ratelimit.fixedWindow(30, "1 m")),
+  messageReaction: createLimiter("message-reaction", Ratelimit.fixedWindow(20, "1 m")),
 
   messageSend: createLimiter(
     "message-send",
@@ -130,9 +152,11 @@ export async function checkRateLimit(
     trustedSubject,
   );
 
-  return evaluateRateLimit(
+  const decision = await evaluateRateLimit(
     limiters[kind],
     identifier,
     failurePolicy,
   );
+  if (decision.reason === "unavailable") reportFailure("rate_limit_unavailable");
+  return decision;
 }

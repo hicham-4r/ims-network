@@ -6,4 +6,13 @@
 
 # Local project audits and handoff bundles
 IMS_NETWORK_*.txt
-tools/audit-phase13-timestamps.ts
+tools/audit-phase13-timestamps.ts*.zip
+README-*.txt
+*.tsbuildinfo
+*.bak
+*.log
+.npmrc
+AGENTS.md
+SECURITY.md
+/IMS_NETWORK_*.zip
+/.npmrc

@@ -1,11 +1,17 @@
+import { reportFailure } from "@/server/observability/safe-events";
 import { headers } from "next/headers";
 
 import { auth } from "./auth";
 
 export async function getCurrentSession() {
-  return auth.api.getSession({
-    headers: await headers(),
-  });
+  try {
+    return await auth.api.getSession({
+      headers: await headers(),
+    });
+  } catch {
+    reportFailure("session_lookup_failed");
+    throw new Error("Session lookup temporarily unavailable.");
+  }
 }
 
 export class AuthenticationRequiredError extends Error {

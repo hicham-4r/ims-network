@@ -11,8 +11,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  requireActiveMember,
-} from "@/server/account-state";
+  requireActiveMemberPage,
+} from "@/server/account-state/routing";
 
 function OptionalValue({
   value,
@@ -32,7 +32,7 @@ function OptionalValue({
 export default async function ProfilePage() {
   const {
     profile,
-  } = await requireActiveMember();
+  } = await requireActiveMemberPage();
 
   return (
     <div className="space-y-8">
@@ -53,7 +53,7 @@ export default async function ProfilePage() {
           </p>
         </div>
 
-        <Link
+        <Link prefetch={false}
           href="/dashboard"
           className="text-sm font-medium underline-offset-4 hover:underline"
         >
@@ -95,6 +95,12 @@ export default async function ProfilePage() {
 
                 bio:
                   profile.bio,
+                jobTitle: profile.jobTitle,
+                company: profile.company,
+                location: profile.location,
+                skills: profile.skills,
+                mentorship: profile.mentorship,
+
               }}
             />
           </CardContent>
@@ -129,6 +135,7 @@ export default async function ProfilePage() {
               ) : null}
             </div>
 
+            <div className="space-y-1 break-words"><p className="font-medium">{[profile.jobTitle, profile.company].filter(Boolean).join(" · ") || "Professional details not provided"}</p>{profile.location && <p className="text-sm text-muted-foreground">{profile.location}</p>}{profile.skills && <p className="text-sm">{profile.skills}</p>}</div>
             <dl className="space-y-4 text-sm">
               <div>
                 <dt className="text-muted-foreground">

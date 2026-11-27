@@ -65,7 +65,8 @@ export async function markConversationReadForActor(
   // the stored read position.
   const rows = await sql`
     WITH authorized AS (
-      SELECT c."id"
+      SELECT c."id", other_member."user_id" AS peer_id,
+        COALESCE(actor_member."last_read_message_sequence", 0::bigint) AS previous_read
       FROM "conversations" AS c
 
       INNER JOIN "conversation_members" AS actor_member
@@ -101,10 +102,11 @@ export async function markConversationReadForActor(
         ) = 2
 
       LIMIT 1
+      FOR UPDATE OF actor_member
     ),
 
     target_message AS (
-      SELECT m."sequence"
+      SELECT m."sequence", a.peer_id, a.previous_read
       FROM "messages" AS m
       INNER JOIN authorized AS a
         ON a."id" = m."conversation_id"
@@ -130,7 +132,9 @@ export async function markConversationReadForActor(
       AND cm."user_id" = ${actorUserId}
 
     RETURNING
-      cm."last_read_message_sequence" AS read_sequence
+      cm."last_read_message_sequence" AS read_sequence,
+      target_message.peer_id,
+      (cm."last_read_message_sequence" > target_message.previous_read) AS advanced
   `;
 
   if (rows.length !== 1) {
@@ -140,6 +144,8 @@ export async function markConversationReadForActor(
   return {
     conversationId,
     lastReadSequence: parseSequence(rows[0].read_sequence),
+    advanced: rows[0].advanced === true,
+    peerUserId: typeof rows[0].peer_id === "string" ? rows[0].peer_id : null,
   };
 }
 

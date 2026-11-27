@@ -1,4 +1,4 @@
-﻿import { eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import { db } from "@/server/db";
 import {
@@ -18,6 +18,14 @@ type UserIdentity = {
 export async function ensureUserProfile(
   user: UserIdentity,
 ) {
+  const load = async () => {
+    const [profile] = await db.select().from(profiles)
+      .where(eq(profiles.userId, user.id)).limit(1);
+    return profile;
+  };
+  const existing = await load();
+  if (existing) return existing;
+
   const displayName =
     normalizeProfileText(user.name);
 
@@ -44,16 +52,7 @@ export async function ensureUserProfile(
     return createdProfile;
   }
 
-  const [existingProfile] = await db
-    .select()
-    .from(profiles)
-    .where(
-      eq(
-        profiles.userId,
-        user.id,
-      ),
-    )
-    .limit(1);
+  const existingProfile = await load();
 
   if (!existingProfile) {
     throw new Error(

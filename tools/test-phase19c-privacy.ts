@@ -1,0 +1,15 @@
+import assert from "node:assert/strict";
+import { EXPORT_PAGE_SIZE, parsePrivacyRequest, privacyEnabled, validExportCursor } from "../src/server/privacy/data-policy";
+assert.equal(EXPORT_PAGE_SIZE, 100);
+assert.equal(privacyEnabled(undefined), false);
+assert.equal(privacyEnabled("true"), true);
+assert.equal(validExportCursor("9223372036854775807"), true);
+for (const bad of ["9223372036854775808", "0", "-1", "01", "1e5", "1;DROP", 1, null, "9".repeat(100)]) assert.equal(validExportCursor(bad), false);
+assert.deepEqual(parsePrivacyRequest({ action: "export" }), { action: "export", before: null });
+assert.deepEqual(parsePrivacyRequest({ action: "export", before: "42" }), { action: "export", before: "42" });
+assert.equal(parsePrivacyRequest({ action: "export", userId: "other" }), null);
+assert.equal(parsePrivacyRequest({ action: "request-deletion", confirmed: "true", password: "x" }), null);
+assert.equal(parsePrivacyRequest({ action: "request-deletion", confirmed: true, password: "x", userId: "other" }), null);
+assert.equal(parsePrivacyRequest({ action: "request-deletion", confirmed: true, password: "x".repeat(129) }), null);
+assert.deepEqual(parsePrivacyRequest({ action: "request-deletion", confirmed: true, password: "x" }), { action: "request-deletion", confirmed: true, password: "x" });
+console.log("PHASE 19C PRIVACY POLICY: PASS");

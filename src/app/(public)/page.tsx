@@ -1,4 +1,5 @@
-﻿import {
+import Link from "next/link";
+import {
   ArrowRight,
   Database,
   MessageCircle,
@@ -32,13 +33,13 @@ const principles = [
   {
     title: "Durable data",
     description:
-      "PostgreSQL will remain the source of truth for accounts, profiles, conversations, messages, and other durable data.",
+      "PostgreSQL remains the source of truth for accounts, profiles, conversations, messages, and other durable data.",
     icon: Database,
   },
   {
     title: "Real-time when needed",
     description:
-      "Messaging will use route-scoped real-time connections rather than keeping unnecessary sockets open across the application.",
+      "Messaging uses route-scoped real-time connections rather than keeping unnecessary sockets open across the application.",
     icon: MessageCircle,
   },
 ];
@@ -74,10 +75,10 @@ export default function Home() {
 
               <div className="mt-8 flex flex-wrap gap-3">
                 <a
-                  href="#status"
+                  href="/sign-up"
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  View project status
+                  Join the network
                   <ArrowRight
                     className="size-4"
                     aria-hidden="true"
@@ -85,10 +86,10 @@ export default function Home() {
                 </a>
 
                 <a
-                  href="#architecture"
+                  href="/sign-in"
                   className="inline-flex h-10 items-center justify-center rounded-md border bg-background px-4 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  Architecture
+                  Sign in
                 </a>
               </div>
             </div>
@@ -103,7 +104,7 @@ export default function Home() {
                 <p>
                   Secure authentication, administrator approval, profile
                   editing, and a searchable member directory are available
-                  in development. Messaging will follow in later phases.
+                  in development. Private member messaging is available.
                 </p>
 
                 <div className="rounded-lg border bg-muted/40 p-4">
@@ -131,7 +132,7 @@ export default function Home() {
             <p className="mt-4 leading-7 text-muted-foreground">
               Development now includes Neon PostgreSQL, authentication,
               account approval, profiles, and the member directory.
-              Messaging, avatars, Redis, and deployment remain on the roadmap.
+              Private messaging and avatars are implemented; the platform remains in development.
             </p>
           </div>
         </section>
@@ -185,15 +186,13 @@ export default function Home() {
             <CardHeader>
               <CardDescription>Next development work</CardDescription>
               <CardTitle>
-                Alumni profile details and messaging
+                A more connected alumni community
               </CardTitle>
             </CardHeader>
 
             <CardContent>
               <p className="max-w-3xl leading-7 text-muted-foreground">
-                The next milestones add individual alumni profile pages,
-                avatar support, and secure direct messaging, while keeping
-                the application accessible and cost-conscious.
+                The next milestones improve member discovery, messaging and the mobile experience, while keeping the application accessible and cost-conscious.
               </p>
             </CardContent>
           </Card>
@@ -203,6 +202,7 @@ export default function Home() {
       <footer className="border-t">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-8 text-sm text-muted-foreground sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <p>IMS Network · ESITH, Morocco</p>
+          <Link href="/privacy" className="underline underline-offset-4">Messaging and account privacy</Link>
           <p>Built with a security-first, cost-aware architecture.</p>
         </div>
       </footer>

@@ -1,9 +1,12 @@
-﻿import { revalidatePath } from "next/cache";
+import { reportFailure } from "@/server/observability/safe-events";
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { requireActiveMember } from "@/server/account-state";
 import { AccountAccessError } from "@/server/account-state/errors";
-import { getCurrentSession } from "@/server/auth";
+import { AuthenticationRequiredError } from "@/server/auth/session";
+import { checkRateLimit } from "@/server/redis/rate-limit";
+import { serverEnv } from "@/server/env";
 
 import {
   AvatarConflictError,
@@ -94,19 +97,10 @@ async function readBoundedUpload(request: Request) {
 export async function POST(request: Request) {
   const origin = request.headers.get("origin");
 
-  if (!origin || origin !== new URL(request.url).origin) {
+  if (!origin || origin !== new URL(serverEnv.BETTER_AUTH_URL).origin) {
     return NextResponse.json(
       { error: "Upload origin not allowed." },
       { status: 403 },
-    );
-  }
-
-  const session = await getCurrentSession();
-
-  if (!session) {
-    return NextResponse.json(
-      { error: "Authentication required." },
-      { status: 401 },
     );
   }
 
@@ -115,6 +109,9 @@ export async function POST(request: Request) {
   try {
     member = await requireActiveMember();
   } catch (error) {
+    if (error instanceof AuthenticationRequiredError) {
+      return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+    }
     if (error instanceof AccountAccessError) {
       return NextResponse.json(
         { error: "Active membership required." },
@@ -122,10 +119,19 @@ export async function POST(request: Request) {
       );
     }
 
-    throw error;
+    reportFailure("avatar_access_unavailable");
+    return NextResponse.json({ error: "Upload temporarily unavailable." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
 
   try {
+    const decision = await checkRateLimit("avatarUpload", member.session.user.id, "deny");
+    if (!decision.allowed) {
+      const unavailable = decision.reason === "unavailable";
+      return NextResponse.json({ error: unavailable ? "Upload temporarily unavailable." : "Too many uploads. Try again later." }, {
+        status: unavailable ? 503 : 429,
+        headers: { "Cache-Control": "no-store", "Retry-After": String(decision.retryAfterSeconds ?? 30) },
+      });
+    }
     const file = await readBoundedUpload(request);
 
     if (file instanceof File && file.size > MAX_AVATAR_BYTES) {
@@ -160,7 +166,7 @@ export async function POST(request: Request) {
       );
     }
 
-    console.error("Avatar upload failed.");
+    reportFailure("avatar_upload_failed");
 
     return NextResponse.json(
       { error: "Unable to save avatar. Please try again." },

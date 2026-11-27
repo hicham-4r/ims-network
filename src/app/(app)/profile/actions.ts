@@ -16,6 +16,12 @@ export type ProfileFormState = {
     program?: string[];
     graduationYear?: string[];
     bio?: string[];
+    jobTitle?: string[];
+    company?: string[];
+    location?: string[];
+    skills?: string[];
+    mentorship?: string[];
+
   };
 };
 
@@ -28,6 +34,12 @@ export async function updateProfileAction(
     program: formData.get("program"),
     graduationYear: formData.get("graduationYear"),
     bio: formData.get("bio"),
+    jobTitle: formData.get("jobTitle"),
+    company: formData.get("company"),
+    location: formData.get("location"),
+    skills: formData.get("skills"),
+    mentorship: formData.get("mentorship"),
+
   };
 
   const parsed =
@@ -50,6 +62,12 @@ export async function updateProfileAction(
           flattened.fieldErrors.graduationYear,
         bio:
           flattened.fieldErrors.bio,
+        jobTitle: flattened.fieldErrors.jobTitle,
+        company: flattened.fieldErrors.company,
+        location: flattened.fieldErrors.location,
+        skills: flattened.fieldErrors.skills,
+        mentorship: flattened.fieldErrors.mentorship,
+
       },
     };
   }

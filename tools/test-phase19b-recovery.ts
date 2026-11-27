@@ -1,0 +1,33 @@
+import assert from "node:assert/strict";
+import { createRecoveryCode, validRecoveryCode, validRecoveryPassword, recoveryIdentifier, recoveryBinding, sameDigest, recoveryEnabled, recoveryEligible } from "../src/server/auth/recovery-code-core";
+const secret = "unit-test-only-secret-not-for-deployment";
+const codes = Array.from({ length: 128 }, createRecoveryCode);
+assert.equal(new Set(codes).size, codes.length);
+assert.ok(codes.every(validRecoveryCode));
+for (const bad of [null, "", "IMS1-abc", "A".repeat(43), codes[0] + "\n", codes[0] + "=", "IMS1-" + "*".repeat(43)]) assert.equal(validRecoveryCode(bad), false);
+assert.equal(validRecoveryPassword("1234567"), false);
+assert.equal(validRecoveryPassword("12345678"), true);
+assert.equal(validRecoveryPassword("a".repeat(129)), false);
+const id = recoveryIdentifier(secret, codes[0]);
+assert.match(id, /^ims-recovery-v1:[a-f0-9]{64}$/);
+assert.ok(!id.includes(codes[0]));
+assert.notEqual(id, recoveryIdentifier(secret, codes[1]));
+assert.notEqual(id, recoveryIdentifier(secret + "!", codes[0]));
+const binding = recoveryBinding(secret, "user", "account", "hash", "1.123456");
+assert.equal(sameDigest(binding, binding), true);
+assert.equal(sameDigest(null, binding), false);
+assert.equal(sameDigest("0", binding), false);
+for (const args of [["other", "account", "hash", "1.123456"], ["user", "other", "hash", "1.123456"], ["user", "account", "new-hash", "1.123456"], ["user", "account", "hash", "1.123457"]] as const) {
+  assert.equal(sameDigest(binding, recoveryBinding(secret, args[0], args[1], args[2], args[3])), false);
+}
+const subject = { userId: "member", role: "MEMBER", status: "ACTIVE", emailVerified: false };
+assert.equal(recoveryEligible(subject, "owner"), true);
+assert.equal(recoveryEligible(subject, "member"), false);
+assert.equal(recoveryEligible({ ...subject, role: "ADMIN" }, "owner"), false);
+assert.equal(recoveryEligible({ ...subject, emailVerified: true }, "owner"), false);
+for (const status of ["SUSPENDED", "PENDING_APPROVAL", "REJECTED", "UNVERIFIED"]) assert.equal(recoveryEligible({ ...subject, status }, null), false);
+assert.equal(recoveryEnabled(undefined), false);
+assert.equal(recoveryEnabled("false"), false);
+assert.equal(recoveryEnabled("TRUE"), false);
+assert.equal(recoveryEnabled("true"), true);
+console.log("PHASE 19B RECOVERY CODE CORE: PASS");

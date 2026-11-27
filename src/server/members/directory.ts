@@ -6,10 +6,12 @@ import {
   like,
   or,
   type SQL,
+  sql,
 } from "drizzle-orm";
 import { z } from "zod";
 
-import { requireActiveMember } from "@/server/account-state";
+import { requireActiveMemberPage } from "@/server/account-state/routing";
+import { measurePageStage } from "@/server/observability/page-timing";
 import { db } from "@/server/db";
 import {
   applicationUserState,
@@ -25,10 +27,12 @@ const directoryInputSchema = z.object({
   q: z.string().max(80).optional(),
   year: z.string().max(4).optional(),
   cursor: z.string().max(1024).optional(),
+  mentorship: z.enum(["", "open", "seeking", "unavailable"]).optional(),
 });
 
 const cursorSchema = z.object({
-  v: z.literal(1),
+  v: z.literal(2),
+  mentorship: z.enum(["", "open", "seeking", "unavailable"]),
   q: z.string().max(80),
   year: z.number().int().nullable(),
   name: z.string().max(256),
@@ -41,6 +45,7 @@ export type DirectoryInput = {
   q?: string;
   year?: string;
   cursor?: string;
+  mentorship?: string;
 };
 
 export class InvalidDirectoryQueryError extends Error {
@@ -54,6 +59,7 @@ function decodeCursor(
   raw: string,
   q: string,
   year: number | null,
+  mentorship: DirectoryCursor["mentorship"],
 ): DirectoryCursor {
   try {
     if (!/^[A-Za-z0-9_-]+$/.test(raw)) {
@@ -69,7 +75,7 @@ function decodeCursor(
     if (
       !result.success ||
       result.data.q !== q ||
-      result.data.year !== year
+      result.data.year !== year || result.data.mentorship !== mentorship
     ) {
       throw new Error("Invalid cursor");
     }
@@ -95,7 +101,7 @@ export async function listActiveMembers(
   input: DirectoryInput,
 ) {
   // Authentication and account authorization happen first.
-  const { session } = await requireActiveMember();
+  const { session } = await requireActiveMemberPage();
 
   const parsed = directoryInputSchema.safeParse(input);
 
@@ -126,14 +132,13 @@ export async function listActiveMembers(
     }
   }
 
+  const mentorship = parsed.data.mentorship ?? "";
   const cursor = parsed.data.cursor
-    ? decodeCursor(parsed.data.cursor, q, year)
+    ? decodeCursor(parsed.data.cursor, q, year, mentorship)
     : null;
 
-  const decision = await checkRateLimit(
-    "memberSearch",
-    session.user.id,
-    "allow",
+  const decision = await measurePageStage("directory_limit", () =>
+    checkRateLimit("memberSearch", session.user.id, "allow"),
   );
 
   enforceMemberDirectoryRateLimit(decision);
@@ -148,6 +153,10 @@ export async function listActiveMembers(
     const searchCondition = or(
       like(profiles.displayNameSearch, prefix),
       like(profiles.programSearch, prefix),
+      like(sql`lower(${profiles.company})`, prefix),
+      like(sql`lower(${profiles.jobTitle})`, prefix),
+      like(sql`lower(${profiles.location})`, prefix),
+      like(sql`lower(${profiles.skills})`, prefix),
     );
 
     if (searchCondition) {
@@ -160,6 +169,8 @@ export async function listActiveMembers(
       eq(profiles.graduationYear, year),
     );
   }
+
+  if (mentorship) conditions.push(eq(profiles.mentorship, mentorship));
 
   if (cursor) {
     const cursorCondition = or(
@@ -175,7 +186,7 @@ export async function listActiveMembers(
     }
   }
 
-  const rows = await db
+  const rows = await measurePageStage("directory_query", async () => await db
     .select({
       userId: profiles.userId,
       displayName: profiles.displayName,
@@ -183,6 +194,12 @@ export async function listActiveMembers(
       program: profiles.program,
       graduationYear: profiles.graduationYear,
       bio: profiles.bio,
+      jobTitle: profiles.jobTitle,
+      company: profiles.company,
+      location: profiles.location,
+      skills: profiles.skills,
+      mentorship: profiles.mentorship,
+
       avatarUrl: profiles.avatarUrl,
       avatarUpdatedAt: profiles.updatedAt,
     })
@@ -199,7 +216,8 @@ export async function listActiveMembers(
       asc(profiles.displayNameSearch),
       asc(profiles.userId),
     )
-    .limit(MEMBER_PAGE_SIZE + 1);
+    .limit(MEMBER_PAGE_SIZE + 1),
+  );
 
   const hasMore = rows.length > MEMBER_PAGE_SIZE;
 
@@ -211,6 +229,12 @@ export async function listActiveMembers(
       program: row.program,
       graduationYear: row.graduationYear,
       bio: row.bio,
+      jobTitle: row.jobTitle,
+      company: row.company,
+      location: row.location,
+      skills: row.skills,
+      mentorship: row.mentorship,
+
         hasAvatar: Boolean(row.avatarUrl),
         avatarVersion: row.avatarUpdatedAt.toISOString(),
     }));
@@ -221,7 +245,8 @@ export async function listActiveMembers(
   const nextCursor =
     hasMore && lastVisibleRow
       ? encodeCursor({
-          v: 1,
+          v: 2,
+          mentorship,
           q,
           year,
           name: lastVisibleRow.displayNameSearch,
@@ -234,5 +259,6 @@ export async function listActiveMembers(
     nextCursor,
     q,
     year,
+    mentorship,
   };
 }

@@ -1,0 +1,20 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Standalone repository regression test */
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const read = p => fs.readFileSync(p, "utf8");
+const route = read("src/app/api/cron/maintenance/route.ts");
+const run = read("src/server/maintenance/run.ts");
+assert.ok(route.indexOf("if (!isMaintenanceAuthorized(") < route.indexOf("await import("));
+assert.ok(route.indexOf("if (!policy)") < route.indexOf("await import("));
+assert.match(route, /Cache-Control.*no-store/);
+assert.match(run, /pg_try_advisory_xact_lock/);
+assert.match(run, /SET LOCAL statement_timeout/);
+assert.match(run, /SET LOCAL lock_timeout/);
+assert.equal((run.match(/FOR UPDATE SKIP LOCKED/g) || []).length, 3);
+assert.match(run, /DELETE FROM "audit_logs" WHERE \${policy.pruneAudit}/);
+assert.deepEqual([...run.matchAll(/DELETE FROM "([a-z_]+)"/g)].map(m => m[1]), ["session", "verification", "audit_logs"]);
+assert.doesNotMatch(run.split(' : sql`')[0], /DELETE FROM|FOR UPDATE/);
+const vercel = JSON.parse(read("vercel.json"));
+assert.equal(vercel.git.deploymentEnabled, false);
+assert.deepEqual(vercel.crons, [{ path: "/api/cron/maintenance", schedule: "0 4 * * *" }]);
+console.log("PHASE 19A STRUCTURAL REGRESSION: PASS");

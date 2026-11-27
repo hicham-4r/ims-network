@@ -1,0 +1,27 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Standalone repository regression test */
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const read = p => fs.readFileSync(p, "utf8");
+const route = read("src/app/api/auth/[...all]/route.ts");
+const auth = read("src/server/auth/auth.ts");
+const state = read("src/server/account-state/service.ts");
+const profile = read("src/server/profile/ensure.ts");
+const avatar = read("src/app/api/avatar/route.ts");
+const avatarRead = read("src/app/api/avatar/[id]/route.ts");
+const admin = read("src/server/account-state/admin.ts");
+const ws = read("src/app/api/ws/route.ts");
+assert.ok(route.indexOf("validateAuthPostHeaders(request") < route.indexOf("await enforceAuthRateLimit(request)"));
+assert.ok(route.indexOf("await boundAuthPostBody(request)") < route.indexOf("await verifyTurnstile(config"));
+assert.match(route, /handlers\.POST\(bounded\)/);
+assert.match(auth, /if \(user\.emailVerified !== true\) return;/);
+assert.match(auth, /cookieCache: \{ enabled: false \}/);
+assert.match(auth, /requireEmailVerification: false/);
+assert.match(state, /let state = await load\(\);\s*if \(!state\) \{\s*await createPendingAccountState/);
+assert.match(profile, /const existing = await load\(\);\s*if \(existing\) return existing;/);
+assert.ok(avatar.indexOf('checkRateLimit("avatarUpload"') < avatar.indexOf("await readBoundedUpload(request)"));
+assert.doesNotMatch(avatar + avatarRead, /getCurrentSession/);
+assert.match(admin, /checkRateLimit\("adminModeration", actorUserId, "deny"\)/);
+assert.match(ws, /verifySocketSessionAccess/);
+assert.match(ws, /maxPayload: 4096/);
+assert.doesNotMatch(read("src/app/error.tsx"), /console\.error/);
+console.log("PHASE 18C STRUCTURAL REGRESSION: PASS");

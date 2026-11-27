@@ -1,5 +1,5 @@
-﻿import Link from "next/link";
-import { Menu, Network } from "lucide-react";
+import Link from "next/link";
+import { Menu } from "lucide-react";
 
 const navigation = [
   { label: "Overview", href: "#overview" },
@@ -10,15 +10,13 @@ const navigation = [
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <header className="sticky top-0 z-50 border-b bg-background">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
           className="flex items-center gap-2 font-semibold tracking-tight"
         >
-          <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Network className="size-5" aria-hidden="true" />
-          </span>
+          <span className="ims-mark" aria-hidden="true"/>
 
           <span>IMS Network <span className="text-muted-foreground">· ESITH</span></span>
         </Link>
