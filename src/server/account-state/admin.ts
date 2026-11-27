@@ -7,6 +7,8 @@ import {
   requireAdmin,
 } from "@/server/account-state/authorization";
 import { serverEnv } from "@/server/env";
+import { checkRateLimit } from "@/server/redis/rate-limit";
+import { configuredOwnerId } from "./owner";
 
 const adminAccountMutationSchema = z
   .object({
@@ -22,6 +24,8 @@ const adminAccountMutationSchema = z
       "SUSPEND",
       "RESTORE",
     ]),
+
+    confirmed: z.literal(true),
 
     reason: z
       .string()
@@ -130,14 +134,19 @@ export async function changeAccountState(
   } = await requireAdmin();
 
   const actorUserId = session.user.id;
+  const ownerId = configuredOwnerId();
 
   if (
-    action === "SUSPEND" &&
     actorUserId === targetUserId
   ) {
     throw new AdminAccountMutationError(
-      "Administrators cannot suspend their own account.",
+      "Administrators cannot change their own account state.",
     );
+  }
+
+  const rateLimit = await checkRateLimit("adminModeration", actorUserId, "deny");
+  if (!rateLimit.allowed) {
+    throw new AdminAccountMutationError("Account management is temporarily limited. Try again shortly.");
   }
 
   const transition =
@@ -206,6 +215,21 @@ export async function changeAccountState(
 
       WHERE
         "user_id" = ${targetUserId}
+        AND "role" = 'MEMBER'
+        AND "user_id" IS DISTINCT FROM ${ownerId}::text
+        AND EXISTS (
+          SELECT 1 FROM "application_user_state" AS actor
+          WHERE actor."user_id" = ${actorUserId}
+            AND actor."role" = 'ADMIN' AND actor."status" = 'ACTIVE'
+          FOR UPDATE
+        )
+        AND EXISTS (
+          SELECT 1 FROM "session" AS actor_session
+          WHERE actor_session."id" = ${session.session.id}
+            AND actor_session."user_id" = ${actorUserId}
+            AND actor_session."expires_at" > (now() AT TIME ZONE 'UTC')
+          FOR UPDATE
+        )
         AND "status" =
           ${transition.fromStatus}::"account_status"
 

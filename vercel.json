@@ -1,5 +1,14 @@
 {
+  "regions": [
+    "fra1"
+  ],
   "git": {
     "deploymentEnabled": false
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/maintenance",
+      "schedule": "0 4 * * *"
+    }
+  ]
 }

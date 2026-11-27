@@ -47,12 +47,7 @@ export default function SignInPage() {
       });
 
       if (error) {
-        if (error.status === 403) {
-          router.replace("/verify-email");
-          return;
-        }
-
-        setErrorMessage("Invalid email or password.");
+        setErrorMessage("Sign-in could not be completed. Check your credentials.");
         return;
       }
 

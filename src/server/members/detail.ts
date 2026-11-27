@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 
-import { requireActiveMember } from "@/server/account-state";
+import { requireActiveMemberPage } from "@/server/account-state/routing";
 import { db } from "@/server/db";
 import {
   applicationUserState,
@@ -17,7 +17,7 @@ import {
 
 export async function getActiveMemberById(userId: string) {
   // Authenticate and authorize the viewer first.
-  await requireActiveMember();
+  await requireActiveMemberPage();
 
   if (
     typeof userId !== "string" ||
@@ -66,6 +66,12 @@ export async function getActiveMemberById(userId: string) {
           program: profiles.program,
           graduationYear: profiles.graduationYear,
           bio: profiles.bio,
+          jobTitle: profiles.jobTitle,
+          company: profiles.company,
+          location: profiles.location,
+          skills: profiles.skills,
+          mentorship: profiles.mentorship,
+
         })
         .from(profiles)
         .innerJoin(

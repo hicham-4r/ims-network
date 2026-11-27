@@ -1,33 +1,33 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
+import { cache } from "react";
+
+import { measurePageStage } from "@/server/observability/page-timing";
 
 import { getCurrentSession } from "@/server/auth";
 import type {
   AccountStatus,
 } from "@/server/db/schema";
 
-import {
-  loadApplicationAccountContext,
-} from "./context";
+import { loadPageApplicationAccountContext } from "./page-context";
 
-export async function getApplicationPageAccount() {
-  const session =
-    await getCurrentSession();
+// React cache is scoped to the current server render, never shared across
+// requests. Keep mutation/API authorization on the separate uncached helpers.
+export const getApplicationPageAccount = cache(async function getApplicationPageAccount() {
+  const session = await measurePageStage("session", getCurrentSession);
 
   if (!session) {
     redirect("/sign-in");
   }
 
-  return loadApplicationAccountContext(
-    session,
-  );
-}
+  return loadPageApplicationAccountContext(session);
+});
 
 export function redirectRestrictedAccount(
   status: AccountStatus,
 ) {
   switch (status) {
     case "UNVERIFIED":
-      redirect("/verify-email");
+      redirect("/pending-approval");
 
     case "PENDING_APPROVAL":
       redirect("/pending-approval");
@@ -41,6 +41,12 @@ export function redirectRestrictedAccount(
     case "ACTIVE":
       return;
   }
+}
+
+export async function requireActiveMemberPage() {
+  const context = await getApplicationPageAccount();
+  redirectRestrictedAccount(context.accountState.status);
+  return context;
 }
 
 export async function requireAccountStatusPage(

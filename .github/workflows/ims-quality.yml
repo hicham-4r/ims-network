@@ -1,0 +1,42 @@
+name: IMS quality
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      audit:
+        description: Run npm vulnerability audit (high severity gate)
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: ims-quality-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26.13.0'
+          package-manager-cache: false
+      - name: Check tracked files for common secret patterns
+        run: node tools/ci/check-repository.cjs
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Generate route types without building or starting the app
+        run: node node_modules/next/dist/bin/next typegen
+      - name: Quality gate (no hosted credentials)
+        run: node tools/ci/validate.cjs
+      - name: Dependency advisory audit (opt-in)
+        if: github.event_name == 'workflow_dispatch' && inputs.audit
+        run: npm audit --audit-level=high

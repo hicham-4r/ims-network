@@ -1,34 +1,21 @@
-﻿import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import { Suspense } from "react";
+import { ArrowRight, UsersRound, ShieldCheck, Clock, Activity } from "lucide-react";
+import { getAdminMetrics } from "@/server/account-state/admin-metrics";
+import { AdminNav } from "../(app)/admin/admin-nav";
 
 export default function AdminPage() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-sm font-medium text-primary">
-          Administration
-        </p>
-
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-          Admin foundation
-        </h1>
-
-        <p className="mt-3 max-w-2xl text-muted-foreground">
-          Authorization, account approvals, audit logs, and moderation tools
-          are not implemented yet.
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Protected functionality will come later</CardTitle>
-        </CardHeader>
-
-        <CardContent className="text-sm leading-6 text-muted-foreground">
-          This route currently exists only to establish the administration
-          layout boundary. UI visibility will never replace server-side
-          authorization.
-        </CardContent>
-      </Card>
-    </div>
-  );
+  return <Suspense fallback={<div className="ims-panel ims-empty" role="status">Loading administration…</div>}><Overview /></Suspense>;
+}
+const labels: Record<string, string> = { UNVERIFIED: "Legacy unverified", PENDING_APPROVAL: "Pending approval", ACTIVE: "Active", REJECTED: "Rejected", SUSPENDED: "Suspended" };
+async function Overview() {
+  const { counts, total, actorRole } = await getAdminMetrics();
+  const pending = counts.find(row => row.status === "PENDING_APPROVAL")?.total ?? 0;
+  const active = counts.find(row => row.status === "ACTIVE")?.total ?? 0;
+  const restricted = counts.filter(row => row.status === "SUSPENDED" || row.status === "REJECTED").reduce((sum,row) => sum + row.total,0);
+  const stats = [{ label: "Total accounts", value: total, href: "/admin/accounts?status=ALL", icon: UsersRound },{ label: "Active members", value: active, href: "/admin/accounts?status=ACTIVE", icon: Activity },{ label: "Pending approval", value: pending, href: "/admin/accounts?status=PENDING_APPROVAL", icon: Clock },{ label: "Restricted accounts", value: restricted, href: "/admin/accounts", icon: ShieldCheck }];
+  return <div className="ims-admin-workspace"><AdminNav/><header className="ims-page-heading"><div><p className="ims-kicker">Workspace / Administration</p><h1>Administration</h1><p>Manage membership, account eligibility and administrative activity.</p></div><span className="ims-role-label"><ShieldCheck size={15} aria-hidden="true"/>{actorRole}</span></header>
+    <section className="ims-metrics" aria-label="Account metrics">{stats.map(({label,value,href,icon:Icon}) => <Link key={label} prefetch={false} href={href} className="ims-metric ims-metric-action"><div className="ims-metric-label">{label}<Icon size={18} aria-hidden="true"/></div><strong>{value}</strong><small>View accounts <ArrowRight size={12} aria-hidden="true"/></small></Link>)}</section>
+    <div className="ims-admin-grid"><section className="ims-panel"><div className="ims-section-heading"><div><h2>Account distribution</h2><p>Cached account counts; reviews always use current state.</p></div><Link prefetch={false} href="/admin/accounts" className="ims-text-link">Manage <ArrowRight size={14} aria-hidden="true"/></Link></div><div className="ims-admin-distribution">{counts.map(({status,total:count}) => <div key={status} className="ims-admin-count"><div><span>{labels[status] ?? status}</span><strong className="tabular-nums">{count} <span>/ {total}</span></strong></div><div className="ims-chart-track" role="img" aria-label={`${count} of ${total} accounts`}><div className="ims-chart-bar" data-status={status} style={{width:`${total ? count/total*100 : 0}%`}}/></div><Link prefetch={false} href={`/admin/accounts?status=${status}`} className="ims-text-link">View {labels[status]?.toLowerCase() ?? status.toLowerCase()}</Link></div>)}</div></section>
+    <aside className="ims-admin-aside"><section className="ims-panel"><div className="ims-section-heading"><h2>Review queue</h2><Clock size={18} aria-hidden="true"/></div><div className="ims-profile-summary"><strong className="text-3xl tabular-nums">{pending}</strong><p>{pending ? "Accounts are awaiting eligibility review." : "No accounts awaiting approval."}</p><Link prefetch={false} href="/admin/accounts?status=PENDING_APPROVAL" className="ims-outline-button">Open approval queue <ArrowRight size={15} aria-hidden="true"/></Link></div></section><section className="ims-panel"><div className="ims-section-heading"><h2>Security & audit</h2><ShieldCheck size={18} aria-hidden="true"/></div><div className="ims-profile-summary"><p>Administrative state changes are audited. Private conversations remain participant-scoped and are not end-to-end encrypted.</p>{actorRole === "OWNER" && <p>Manage administrator privileges from account details.</p>}<Link prefetch={false} href="/admin/audit" className="ims-text-link">Open audit log <ArrowRight size={14} aria-hidden="true"/></Link><Link prefetch={false} href="/privacy" className="ims-text-link">Privacy disclosure <ArrowRight size={14} aria-hidden="true"/></Link></div></section></aside></div></div>;
 }

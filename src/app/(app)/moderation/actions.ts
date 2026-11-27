@@ -1,0 +1,6 @@
+"use server";
+import {revalidatePath} from "next/cache";
+import {reportMessage,reviewMessageReport,changeReviewer} from "@/server/messaging/moderation";
+export async function submitReport(input:unknown):Promise<{ok:boolean}>{try{return {ok:await reportMessage(input)};}catch{return {ok:false};}}
+export async function reviewReportAction(_state:{message:string},data:FormData):Promise<{message:string}>{try{const ok=await reviewMessageReport({reportId:data.get("reportId"),decision:data.get("decision")});if(ok)revalidatePath("/moderation");return {message:ok?"Review saved.":"Review unavailable or already closed."};}catch{return {message:"Review unavailable."};}}
+export async function reviewerRoleAction(_state:{message:string},data:FormData):Promise<{message:string}>{try{const ok=await changeReviewer({targetUserId:data.get("targetUserId"),action:data.get("action"),password:data.get("password"),confirmed:data.get("confirmed")==="yes"});if(ok){revalidatePath("/admin/accounts");revalidatePath("/moderation");}return {message:ok?"Moderator capability updated.":"Change not allowed or already applied."};}catch{return {message:"Role change unavailable."};}}

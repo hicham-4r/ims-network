@@ -1,150 +1,54 @@
-# IMS Network Architecture
+# IMS Network architecture — Phase 22 baseline
 
-## Status
+Protected Preview is user-accepted. Production readiness and CI execution are separate gates. See ADRs for historical decisions.
 
-Early development.
+## Components and trust boundaries
 
-The frontend foundation, documentation baseline, environment boundary, state collector, and Neon/Drizzle database foundation are implemented.
+```mermaid
+flowchart TB
+  B[Authenticated browser] -->|HTTPS / HttpOnly session| N[Next.js server]
+  N --> A[Better Auth + ACTIVE account gate]
+  A --> Q[Authorized services]
+  Q -->|Pooled runtime queries| P[(Neon PostgreSQL)]
+  Q -->|REST cache, rate limit, append| R[(Upstash Redis)]
+  Q -->|Authenticated avatar access| V[Private Blob]
+  Q --> E[Recovery email]
+  B -->|Lazy authenticated WS| W[Socket access and local hub]
+  R -->|TLS TCP bounded XREAD| W
+  W -->|Scoped change notice| B
+```
 
-Email verification/password recovery, Redis, messaging, email delivery, storage, and production deployment are not implemented yet.
+The durable database stores membership, profiles, conversations, messages, read cursors, delivery acknowledgments and moderation records. Requests derive identity from server sessions. Admin approval remains required; email verification no longer gates registration. Legacy UNVERIFIED state is retained for compatibility. The review-only moderator capability is separate from ADMIN, controlled by the owner. Private message bodies are not exposed to reviewers.
 
-## Current Foundation
+React request-scoped cache deduplicates page-account reads within a render only. Member detail cache uses a profile revision and fresh ACTIVE checks. Cache misses and failures have explicit behavior; authorization is not bypassed. Lists are bounded and paginated. Avatars use the existing authenticated endpoint. PWA service worker does not store private responses offline.
 
-- Next.js 16
-- React
-- TypeScript
-- App Router
-- Tailwind CSS
-- shadcn/ui
-- Lucide icons
-- npm
-- Windows 11 terminal-first development
-- GitHub repository
-- Zod environment validation foundation
-- safe state-bundle collector
-- Neon PostgreSQL development database
-- Drizzle ORM and Drizzle Kit migration foundation
-- pooled Neon runtime database adapter
-- database health-check tooling
-- Better Auth email/password authentication
-- HttpOnly cookie-backed sessions
-- server-side authenticated route protection
+## Message lifecycle
 
-## Target Architecture
+```mermaid
+sequenceDiagram
+  participant A as Sender browser
+  participant S as Authorized service
+  participant D as PostgreSQL
+  participant R as Redis stream
+  participant W as Recipient WebSocket
+  participant B as Recipient browser
+  A->>A: Optimistic bubble with client UUID
+  A->>S: Send / explicit retry with same UUID
+  S->>D: Authorized persistence
+  S-->>A: Durable result
+  S->>R: Scoped change notice
+  R-->>W: Bounded TCP stream read
+  W-->>B: Authorized refresh notice
+  B->>S: Reconcile bounded history
+  B->>S: Browser acknowledgment / read cursor
+```
 
-IMS Network is planned as a Vercel-native student and alumni networking application.
+Publication is best effort; persisted messages survive relay failure. Reconciliation handles missed notices. The compatible RESP2 TCP adapter uses TLS verification and explicit connection options. No global socket or idle presence heartbeat. Typing and activity are opt-in, conversation-scoped and expire for display. Read receipts reflect stored cursor; delivery means browser acknowledgment, not all-device guarantee.
 
-Target technologies include:
+## Environment separation
 
-- Neon PostgreSQL
-- Drizzle ORM
-- Better Auth
-- Upstash Redis
-- Vercel WebSockets
-- Resend
-- Vercel Blob
-- Vitest
-- Playwright
-- GitHub Actions
+Development, protected Preview and future Production must have independently verified database targets and Redis isolation. Preview has nine recorded migrations as reported by the maintainer. Production begins with a fresh database unless a legitimate legacy export becomes available. Direct SQL migration credentials and pooled runtime credentials have distinct roles. Runtime Frankfurt routing was observed for the diagnostic WebSocket invocation; verify new deployments. Build region may differ. Git-triggered Vercel deploys remain disabled.
 
-Planned technologies are not considered implemented until their roadmap phases are completed and verified.
+## Related references
 
-## Architecture Principles
-
-- PostgreSQL is the durable source of truth.
-- Redis is cache and coordination infrastructure, not durable application storage.
-- Server Components are preferred by default.
-- Client Components are used only when browser interaction is required.
-- Provider-specific integrations remain isolated behind server-side modules.
-- Authentication and authorization are enforced server-side.
-- User-provided identity or role information is never trusted directly.
-- Lists and message history must remain bounded and paginated.
-- Real-time connections must be lazy and route-scoped.
-- No global WebSocket should exist merely because a user is authenticated.
-- Security, accessibility, testing, and cost awareness are continuous requirements.
-
-## Environment Boundaries
-
-Server environment validation lives under:
-
-    src/server/env.ts
-
-Browser-safe configuration lives under:
-
-    src/lib/env/
-
-Secrets must never be exposed through NEXT_PUBLIC_ variables.
-
-The project currently requires no provider-specific secret environment variables.
-
-## Architecture Decision Records
-
-Important decisions are documented under:
-
-    docs/adr/
-
-Current ADRs:
-
-- ADR 0001: Next.js and Vercel-Native Architecture
-- ADR 0002: npm as the Canonical Package Manager
-- ADR 0003: Neon PostgreSQL and Drizzle ORM
-- ADR 0004: Better Auth Session Model
-- ADR 0005: Redis Role Boundaries
-
-## Hobby-Tier Design
-
-The initial cost and capacity rules are documented in:
-
-    docs/hobby-budget.md
-
-Provider pricing and quotas must be rechecked against current official documentation before cost-sensitive implementation decisions.
-
-## State Recovery
-
-Repository reality can be summarized with:
-
-    npm run state
-
-This generates:
-
-    IMS_NETWORK_STATE_BUNDLE.txt
-
-The bundle is local, Git-ignored, and built from an explicit safe allowlist.
-
-### Phase 8 authentication email lifecycle
-
-The authentication foundation now includes:
-- mandatory email verification for email/password accounts
-- server-only transactional email delivery through Resend
-- generic verification resend behavior
-- forgot-password and reset-password flows
-- Better Auth-owned verification and reset tokens
-- reset-token expiry and single-use behavior
-- session revocation after successful password reset
-
-The application does not expose authentication or email-provider secrets to browser code. Production email delivery will require a verified application-owned domain.
-
-### Phase 9 account authorization
-
-Authentication and application authorization are separate boundaries.
-
-Protected application requests derive the current user from the validated Better Auth server session. Browser-provided user IDs, roles, or account states are not authorization evidence.
-
-Central authorization helpers include:
-
-- `requireApplicationAccount()`
-- `requireActiveMember()`
-- `requireAdmin()`
-- server-side account-state routing helpers
-
-Only an `ACTIVE` application account receives normal member access.
-
-The member layout enforces account state for member routes. Restricted states are routed to dedicated account-state pages.
-
-Administrator account transitions are validated server-side against their expected current state and produce audit records.
-
-Account-management transitions do not support an automatic `force` retry or implicit override.
-
-Rejected and suspended accounts have their current Better Auth database sessions revoked as part of the administrative transition.
-
-Account-state pages use route-level loading boundaries so fresh request-specific session and authorization checks remain uncached while still supporting streamed navigation.
+[Data model](../data-model.md), [avatar storage](../avatar-storage.md), [community upgrade](../phase22-community-upgrade.md), [performance baseline](../phase21fg-performance.md), [release runbook](../phase23-release-runbook.md).

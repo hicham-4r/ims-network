@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
+import { TurnstileWidget, turnstileSiteKey } from "@/components/auth/turnstile-widget";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,19 +22,21 @@ import {
 import { Input } from "@/components/ui/input";
 
 export default function SignUpPage() {
-  const router = useRouter();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isPending, setIsPending] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaAttempt, setCaptchaAttempt] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (isPending) {
+    if (isPending || (turnstileSiteKey && !captchaToken)) {
       return;
     }
 
@@ -52,6 +54,7 @@ export default function SignUpPage() {
         name,
         email,
         password,
+        fetchOptions: { headers: captchaToken ? { "x-captcha-response": captchaToken } : {} },
       });
 
       if (error) {
@@ -61,15 +64,42 @@ export default function SignUpPage() {
         return;
       }
 
-      router.replace("/verify-email");
-      router.refresh();
+      // A generic confirmation also avoids revealing whether an email
+      // already belongs to another account.
+      setPassword("");
+      setConfirmPassword("");
+      setSubmitted(true);
     } catch {
       setErrorMessage(
         "Account creation could not be completed. Please try again.",
       );
     } finally {
+      setCaptchaToken(null);
+      setCaptchaAttempt(value => value + 1);
       setIsPending(false);
     }
+  }
+
+  if (submitted) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Registration request received</CardTitle>
+          <CardDescription role="status">
+            If a new account was created, it is awaiting administrator approval.
+            You can sign in to check its status; no email verification is needed.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link
+            href="/sign-in"
+            className="font-medium text-foreground underline underline-offset-4"
+          >
+            Continue to sign in
+          </Link>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -174,10 +204,11 @@ export default function SignUpPage() {
             </Field>
           </FieldGroup>
 
+          <TurnstileWidget key={captchaAttempt} action="signup" onToken={setCaptchaToken} />
           <Button
             type="submit"
             className="w-full"
-            disabled={isPending}
+            disabled={isPending || Boolean(turnstileSiteKey && !captchaToken)}
           >
             {isPending ? "Creating account..." : "Create account"}
           </Button>

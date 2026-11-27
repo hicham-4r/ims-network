@@ -43,7 +43,7 @@ async function main() {
     getAuthLimitKind(
       makeRequest("/api/auth/send-verification-email"),
     ),
-    "recovery",
+    null,
   );
 
   assert.equal(

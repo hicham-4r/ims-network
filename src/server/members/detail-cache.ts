@@ -12,6 +12,12 @@ const publicMemberSchema = z.object({
   program: z.string().nullable(),
   graduationYear: z.number().int().nullable(),
   bio: z.string().nullable(),
+  jobTitle: z.string().nullable().optional(),
+  company: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
+  skills: z.string().nullable().optional(),
+  mentorship: z.string().nullable().optional(),
+
 }).strict();
 
 export type PublicMemberProfile =
@@ -47,7 +53,7 @@ export function memberCacheKey(
     .update(updatedAt.toISOString())
     .digest("hex");
 
-  return `${keyPrefix}:cache:member:${digest}`;
+  return `${keyPrefix}:cache:member:${digest}:professional-v1`;
 }
 
 export async function loadCachedMemberDetail({

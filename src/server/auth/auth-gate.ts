@@ -1,6 +1,5 @@
 import "server-only";
 
-import { redis } from "@/server/redis/client";
 import { checkRateLimit } from "@/server/redis/rate-limit";
 
 import {
@@ -15,19 +14,7 @@ export async function enforceAuthRateLimit(
     return null;
   }
 
-  // Preview has not been provisioned with Redis yet.
-  // Preserve existing Preview authentication until
-  // environment-isolated Redis is explicitly configured.
-  //
-  // Better Auth's existing production-mode protection
-  // remains in place in Preview.
-  if (
-    process.env.VERCEL_ENV === "preview" &&
-    !redis
-  ) {
-    return null;
-  }
-
+  // Preview and Production must use their isolated configured Redis.
   // When enabled, unavailable Redis fails closed.
   // Production without configured Redis also fails closed.
   return evaluateAuthRequestGate(

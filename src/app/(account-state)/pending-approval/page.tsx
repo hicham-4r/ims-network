@@ -1,4 +1,4 @@
-﻿import { SignOutButton } from "@/components/auth/sign-out-button";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import {
   Card,
   CardContent,
@@ -25,7 +25,7 @@ export default async function PendingApprovalPage() {
         </CardTitle>
 
         <CardDescription>
-          Your email has been verified successfully.
+          An administrator must review your account before you can access the network.
         </CardDescription>
       </CardHeader>
 

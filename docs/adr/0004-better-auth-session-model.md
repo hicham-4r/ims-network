@@ -1,8 +1,8 @@
-﻿# ADR 0004: Better Auth Session Model
+# ADR 0004: Better Auth Session Model
 
 ## Status
 
-Accepted as target architecture
+Accepted for session architecture. The former email-verification requirement is superseded by ADR 0006.
 
 ## Context
 

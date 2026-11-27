@@ -1,4 +1,4 @@
-﻿import {
+import {
   and,
   eq,
 } from "drizzle-orm";
@@ -6,43 +6,42 @@
 import { db } from "@/server/db";
 import {
   applicationUserState,
-  type AccountStatus,
 } from "@/server/db/schema";
 
 type AuthenticatedUserIdentity = {
   id: string;
-  emailVerified: boolean;
 };
 
-export async function ensureApplicationUserState(
-  user: AuthenticatedUserIdentity,
-) {
-  const initialStatus: AccountStatus =
-    user.emailVerified
-      ? "PENDING_APPROVAL"
-      : "UNVERIFIED";
-
+// Called by Better Auth's user.create.after and as a login-time fallback.
+// Never updates an existing account status, role or administrative action.
+export async function createPendingAccountState(userId: string) {
   await db
     .insert(applicationUserState)
     .values({
-      userId: user.id,
-      status: initialStatus,
+      userId,
+      status: "PENDING_APPROVAL",
       role: "MEMBER",
     })
     .onConflictDoNothing({
       target: applicationUserState.userId,
     });
+}
 
-  let [state] = await db
-    .select()
-    .from(applicationUserState)
-    .where(
-      eq(
-        applicationUserState.userId,
-        user.id,
-      ),
-    )
-    .limit(1);
+export async function ensureApplicationUserState(
+  user: AuthenticatedUserIdentity,
+) {
+  const load = async () => {
+    const [state] = await db.select().from(applicationUserState)
+      .where(eq(applicationUserState.userId, user.id)).limit(1);
+    return state;
+  };
+  // Established members need only a read. Missing rows still use the
+  // conflict-safe registration fallback, then read the authoritative state.
+  let state = await load();
+  if (!state) {
+    await createPendingAccountState(user.id);
+    state = await load();
+  }
 
   if (!state) {
     throw new Error(
@@ -50,10 +49,10 @@ export async function ensureApplicationUserState(
     );
   }
 
-  if (
-    user.emailVerified &&
-    state.status === "UNVERIFIED"
-  ) {
+  // Old accounts created before this change may still have the legacy
+  // UNVERIFIED status; move only those accounts to admin review.
+  // ACTIVE, REJECTED and SUSPENDED must never change here.
+  if (state.status === "UNVERIFIED") {
     const [updatedState] = await db
       .update(applicationUserState)
       .set({

@@ -1,4 +1,6 @@
-﻿import {
+import {
+  check,
+  uniqueIndex,
   index,
   integer,
   jsonb,
@@ -8,9 +10,12 @@
   timestamp,
 } from "drizzle-orm/pg-core";
 
+import { sql } from "drizzle-orm";
 import { user } from "./auth-schema";
+import { messages } from "./messaging-schema";
 
 export * from "./auth-schema";
+export * from "./messaging-schema";
 
 export const ACCOUNT_STATUS_VALUES = [
   "UNVERIFIED",
@@ -176,6 +181,12 @@ export const profiles = pgTable(
     ),
 
     bio: text("bio"),
+    jobTitle: text("job_title"),
+    company: text("company"),
+    location: text("location"),
+    skills: text("skills"),
+    mentorship: text("mentorship"),
+
 
     avatarUrl: text("avatar_url"),
 
@@ -209,3 +220,17 @@ export const profiles = pgTable(
     ),
   ],
 );
+
+export const moderationReviewers = pgTable("moderation_reviewers", {
+  userId: text("user_id").primaryKey().references(() => user.id, {onDelete:"cascade"}),
+  grantedAt: timestamp("granted_at", {withTimezone:true}).defaultNow().notNull(),
+});
+export const messageReports = pgTable("message_reports", {
+  id: text("id").primaryKey(),
+  reporterId: text("reporter_id").notNull().references(() => user.id, {onDelete:"cascade"}),
+  messageId: text("message_id").notNull().references(() => messages.id, {onDelete:"cascade"}),
+  category: text("category").notNull(),
+  status: text("status").default("OPEN").notNull(),
+  createdAt: timestamp("created_at",{withTimezone:true}).defaultNow().notNull(),
+  reviewedAt: timestamp("reviewed_at",{withTimezone:true}),
+}, t=>[uniqueIndex("message_reports_reporter_message_uq").on(t.reporterId,t.messageId),index("message_reports_status_created_idx").on(t.status,t.createdAt),index("message_reports_reporter_created_idx").on(t.reporterId,t.createdAt),check("message_reports_category_chk",sql`${t.category} IN ('SPAM','HARASSMENT','OTHER')`),check("message_reports_status_chk",sql`${t.status} IN ('OPEN','DISMISSED','ESCALATED')`)]);
