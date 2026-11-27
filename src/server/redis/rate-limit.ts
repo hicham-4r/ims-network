@@ -5,6 +5,7 @@ import { createHmac } from "node:crypto";
 import { Ratelimit } from "@upstash/ratelimit";
 
 import { serverEnv } from "@/server/env";
+import { previewLimiter } from "./preview-rate-limit";
 
 import {
   redis,
@@ -153,7 +154,7 @@ export async function checkRateLimit(
   );
 
   const decision = await evaluateRateLimit(
-    limiters[kind],
+    limiters[kind] ?? previewLimiter(kind),
     identifier,
     failurePolicy,
   );

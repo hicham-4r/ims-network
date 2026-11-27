@@ -1,5 +1,6 @@
 import { Redis } from "@upstash/redis";
 import { z } from "zod";
+import { productionRedisAllowed } from "./access-policy";
 
 const credentialsSchema = z.object({
   url: z.string().url().refine(
@@ -18,6 +19,10 @@ export function createRedisRuntime(env: NodeJS.ProcessEnv) {
         : "development";
 
   const keyPrefix = `ims-network:v1:${namespace}`;
+
+  if (!productionRedisAllowed(env)) {
+    return { redis: null as Redis | null, keyPrefix, namespace };
+  }
 
   const hasUrl =
     env.UPSTASH_REDIS_REST_URL !== undefined;

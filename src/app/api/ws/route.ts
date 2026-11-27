@@ -25,7 +25,7 @@ import { attachRelayForAuthenticatedSocket } from "@/server/realtime/relay-runti
 import { createAuthorizedLocalSocket } from "@/server/realtime/authorized-local-socket";
 import { verifySocketSessionAccess } from "@/server/realtime/socket-access-db";
 import { createSocketDeadline } from "@/server/realtime/socket-deadline";
-import { previewSocketLifetimeMs } from "@/server/realtime/relay-activation-policy";
+import { socketOrigin, isRelayActive, socketLifetimeMs } from "@/server/realtime/relay-activation-policy";
 import { redisKeyPrefix } from "@/server/redis/client";
 
 const privateHeaders = {
@@ -40,25 +40,12 @@ function reject(status: number, message: string) {
 }
 
 export async function GET(request: Request) {
-  // Explicitly disabled outside Preview and until enabled.
-  if (
-    process.env.VERCEL_ENV !== "preview" ||
-    process.env.IMS_PHASE16_WS_ENABLED !== "true"
-  ) {
+  const origin = socketOrigin(process.env);
+  if (!origin || (process.env.VERCEL_ENV === "production" && !isRelayActive(process.env, redisKeyPrefix))) {
     return reject(404, "Not found");
   }
-
-  const hostname = process.env.VERCEL_URL;
-
-  if (!hostname) {
-    return reject(503, "Unavailable");
-  }
-
-  // A WebSocket must originate from this exact deployment.
-  if (
-    request.headers.get("origin") !==
-    `https://${hostname}`
-  ) {
+  if (request.headers.get("origin") !== origin ||
+      (process.env.VERCEL_ENV === "production" && new URL(request.url).origin !== origin)) {
     return reject(403, "Forbidden");
   }
 
@@ -118,7 +105,7 @@ export async function GET(request: Request) {
       return;
     }
 
-    // Relay stays OFF until explicitly enabled on Preview. The socket
+    // Relay stays OFF until explicitly enabled. The socket
     // is already registered against its Better Auth session identity.
     let detachRelay: () => void;
     try {
@@ -134,7 +121,7 @@ export async function GET(request: Request) {
     // WS-only trial: 30s; explicitly enabled Preview relay trial: 150s.
     // Both close gracefully, with bounded teardown if the peer stalls.
     // No Redis/DB polls or new background timers beyond this socket lifetime.
-    const deadline = createSocketDeadline({
+    const deadline = createSocketDeadline<ReturnType<typeof setTimeout>>({
       schedule(callback, delayMs) {
         return setTimeout(callback, delayMs);
       },
@@ -155,11 +142,7 @@ export async function GET(request: Request) {
       forceTerminate() {
         ws.terminate();
       },
-    }, previewSocketLifetimeMs({
-      VERCEL_ENV: process.env.VERCEL_ENV,
-      IMS_PHASE16_WS_ENABLED: process.env.IMS_PHASE16_WS_ENABLED,
-      IMS_PHASE16_RELAY_ENABLED: process.env.IMS_PHASE16_RELAY_ENABLED,
-    }, redisKeyPrefix));
+    }, socketLifetimeMs(process.env, redisKeyPrefix));
 
     const release = deadline.dispose;
 

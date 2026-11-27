@@ -32,11 +32,7 @@ export async function publishMessageNotice(
 
   try {
     return await appendRelayNoticeIfEnabled(
-      {
-        VERCEL_ENV: process.env.VERCEL_ENV,
-        IMS_PHASE16_WS_ENABLED: process.env.IMS_PHASE16_WS_ENABLED,
-        IMS_PHASE16_RELAY_ENABLED: process.env.IMS_PHASE16_RELAY_ENABLED,
-      },
+      process.env,
       client
         ? (key, id, fields, options) =>
             client.xadd(key, id, fields, options)
