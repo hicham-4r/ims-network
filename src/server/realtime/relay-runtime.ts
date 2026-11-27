@@ -8,7 +8,7 @@ import { deliverLocalNotice } from "./local-hub";
 import { createRelayBridge } from "./relay-bridge";
 import { createLazyRelayAttacher } from "./relay-runtime-core";
 import { createConfiguredTcpReaderFactory } from "./stream-reader-tcp";
-import { isPreviewRelayActive } from "./relay-activation-policy";
+import { isRelayActive } from "./relay-activation-policy";
 
 // Constructed once per module/Function instance, never per WebSocket.
 // The underlying reader starts only on the first attached member and stops
@@ -27,14 +27,10 @@ const attachLazy = createLazyRelayAttacher(() =>
  * local socket registration. The user ID must come from the server session.
  *
  * This feature gate is deliberately separate from the WS handshake gate.
- * No live Redis reader is allowed until a later, explicit Preview-only rollout.
+ * Production remains disabled until explicit release configuration is present.
  */
 export function attachRelayForAuthenticatedSocket(userId: string): () => void {
-  const enabled = isPreviewRelayActive({
-    VERCEL_ENV: process.env.VERCEL_ENV,
-    IMS_PHASE16_WS_ENABLED: process.env.IMS_PHASE16_WS_ENABLED,
-    IMS_PHASE16_RELAY_ENABLED: process.env.IMS_PHASE16_RELAY_ENABLED,
-  }, redisKeyPrefix);
+  const enabled = isRelayActive(process.env, redisKeyPrefix);
   relayDiagnostic(enabled ? "relay_enabled" : "relay_disabled");
   return attachLazy(userId, enabled);
 }

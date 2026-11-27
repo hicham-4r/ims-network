@@ -5,14 +5,14 @@ import { requireActiveMember } from "@/server/account-state";
 import { serverEnv } from "@/server/env";
 import { redisKeyPrefix } from "@/server/redis/client";
 import { checkRateLimit } from "@/server/redis/rate-limit";
-import { isPreviewRelayActive } from "@/server/realtime/relay-activation-policy";
+import { isRelayActive } from "@/server/realtime/relay-activation-policy";
 import { activityConversationKey } from "@/server/realtime/relay-protocol";
 import { publishMessageNotice } from "@/server/realtime/stream-publisher";
 import { getSelectedConversationSummary } from "./conversation-details";
 const origin = randomUUID();
 const schema = z.object({ conversationId: z.string().uuid(), kind: z.enum(["typing", "active"]) }).strict();
 export function activityEnabled() {
-  return process.env.IMS_PHASE22_CHAT_ACTIVITY === "true" && isPreviewRelayActive({VERCEL_ENV:process.env.VERCEL_ENV,IMS_PHASE16_WS_ENABLED:process.env.IMS_PHASE16_WS_ENABLED,IMS_PHASE16_RELAY_ENABLED:process.env.IMS_PHASE16_RELAY_ENABLED}, redisKeyPrefix);
+  return process.env.IMS_PHASE22_CHAT_ACTIVITY === "true" && isRelayActive(process.env, redisKeyPrefix);
 }
 export function getActivityScope(conversationId: string, recipient: string) {
   return activityEnabled() ? activityConversationKey(conversationId, recipient, redisKeyPrefix, serverEnv.BETTER_AUTH_SECRET) : null;

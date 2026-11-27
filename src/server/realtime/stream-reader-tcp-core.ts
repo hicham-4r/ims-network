@@ -44,7 +44,7 @@ export type TcpClientFactory = (
 ) => TcpClient;
 
 // The raw URL is never logged, returned by an error, or printed in tests.
-export function validateUpstashTlsUrl(value: string): string {
+export function validateUpstashTlsUrl(value: string, expectedUsername = "default"): string {
   if (!value || value.length > 4096) {
     throw new Error("Missing or invalid Upstash TCP connection URL.");
   }
@@ -60,7 +60,7 @@ export function validateUpstashTlsUrl(value: string): string {
     parsed.protocol !== "rediss:" ||
     !parsed.hostname.endsWith(".upstash.io") ||
     parsed.hostname === ".upstash.io" ||
-    parsed.username !== "default" ||
+    parsed.username !== expectedUsername ||
     !parsed.password ||
     !parsed.port ||
     (parsed.pathname !== "" && parsed.pathname !== "/" && parsed.pathname !== "/0") ||
@@ -109,8 +109,9 @@ function createOptions(redisUrl: string): TcpClientOptions {
 export function createTlsStreamReadFactory(
   redisUrl: string,
   clientFactory: TcpClientFactory,
+  expectedUsername = "default",
 ): StreamReadFactory {
-  const validatedUrl = validateUpstashTlsUrl(redisUrl);
+  const validatedUrl = validateUpstashTlsUrl(redisUrl, expectedUsername);
 
   return async (): Promise<StreamReadClient> => {
     const client = clientFactory(createOptions(validatedUrl));

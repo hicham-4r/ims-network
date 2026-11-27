@@ -1,6 +1,7 @@
 import "server-only";
 
 import Redis from "ioredis";
+import { productionRedisAllowed } from "../redis/access-policy";
 
 import {
   createTlsStreamReadFactory,
@@ -9,11 +10,15 @@ import {
 // Keep the credential in server-side environment only.
 // This factory is not called until we deliberately wire the shared reader.
 export function createConfiguredTcpReaderFactory() {
+  if (!productionRedisAllowed(process.env)) {
+    throw new Error("Redis TCP is restricted to verified dedicated Production.");
+  }
   const url = process.env.UPSTASH_REDIS_TCP_URL;
   if (!url) {
     throw new Error("Realtime Redis TCP URL is not configured.");
   }
 
+  const username = "default";
   return createTlsStreamReadFactory(url, (options) => {
     const client = new Redis(options);
     return {
@@ -29,5 +34,5 @@ export function createConfiguredTcpReaderFactory() {
       disconnect: () => client.disconnect(),
       onError: (handler) => { client.on("error", handler); },
     };
-  });
+  }, username);
 }

@@ -14,9 +14,8 @@ export async function enforceAuthRateLimit(
     return null;
   }
 
-  // Preview and Production must use their isolated configured Redis.
-  // When enabled, unavailable Redis fails closed.
-  // Production without configured Redis also fails closed.
+  // Production uses dedicated Redis; protected Preview uses its own PostgreSQL limiter.
+  // Unavailable rate limiting fails closed for authentication in both environments.
   return evaluateAuthRequestGate(
     request,
     process.env.VERCEL_ENV,

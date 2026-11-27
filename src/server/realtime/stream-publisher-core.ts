@@ -1,3 +1,4 @@
+import { isRelayActive, type RelayActivationEnv } from "./relay-activation-policy";
 import {
   createRelayEntry,
   RELAY_MAXLEN,
@@ -51,21 +52,13 @@ export async function appendRelayNotice(
   return streamId;
 }
 // A separate relay flag prevents Redis writes during WS-only smoke tests.
-// Publication is Preview-only; an unexpected Redis namespace fails closed.
-export type RelayPublishEnvironment = Readonly<{
-  VERCEL_ENV?: string;
-  IMS_PHASE16_WS_ENABLED?: string;
-  IMS_PHASE16_RELAY_ENABLED?: string;
-}>;
+// Publication uses the shared environment policy; wrong namespaces fail closed.
+export type RelayPublishEnvironment = RelayActivationEnv;
 
 export function isPreviewRelayPublishEnabled(
   env: RelayPublishEnvironment,
 ): boolean {
-  return (
-    env.VERCEL_ENV === "preview" &&
-    env.IMS_PHASE16_WS_ENABLED === "true" &&
-    env.IMS_PHASE16_RELAY_ENABLED === "true"
-  );
+  return isRelayActive(env, "ims-network:v1:preview");
 }
 
 /**
@@ -79,9 +72,8 @@ export async function appendRelayNoticeIfEnabled(
   input: RelayInput,
 ): Promise<boolean> {
   if (
-    !isPreviewRelayPublishEnabled(env) ||
-    !append ||
-    input.prefix !== "ims-network:v1:preview"
+    !isRelayActive(env, input.prefix) ||
+    !append
   ) {
     return false;
   }

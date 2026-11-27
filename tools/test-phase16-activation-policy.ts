@@ -12,7 +12,7 @@ for (const environment of ["preview", "production", "development", "", "Preview"
     for (const relay of ["true", "false", "", "TRUE"]) {
       const e = { VERCEL_ENV: environment, IMS_PHASE16_WS_ENABLED: ws,
         IMS_PHASE16_RELAY_ENABLED: relay };
-      const enabled = environment === "preview" && ws === "true" && relay === "true";
+      const enabled = false; // Dedicated Production requires independent opt-in; Preview is retired.
       assert.equal(isPreviewRelayActive(e, preview), enabled);
       assert.equal(isPreviewRelayPublishEnabled(e), enabled,
         "Publisher and reader must agree on flags");
