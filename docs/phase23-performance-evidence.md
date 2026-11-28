@@ -1,34 +1,38 @@
 # Engineering evidence and infrastructure budget
 
-## Measurements
+## Historical measured trials
 
-| Evidence | Result | Limitations |
+| Trial | Result | Scope and limitations |
 | --- | --- | --- |
-| Phase 21F/G HTTP baseline | 300/300 successes; p50 1172 ms, p95 2289 ms, max 3190 ms | 100 distinct accounts, three waves; not sustained traffic, not final UI |
-| Phase 21JB socket test, 2026-11-26 | 100 distinct, 100 ready, peak confirmed overlap 100; held 60076 ms; p50 1336 ms, p95 1745 ms, max 2027 ms readiness | Protected Preview; 0 unexpected notices, cleanup reported 100 suspended and 0 remaining. Does not measure message fan-out or monthly active use. |
-| Phase 22 | Maintainer reported working final Preview | No independently captured final cross-browser or Lighthouse results |
+| Phase 21F/G HTTP baseline | 300/300 successes; p50 1172 ms, p95 2289 ms, max 3190 ms | 100 distinct accounts, three waves; not sustained traffic |
+| Later sustained HTTP trial | 300/300; median 231 ms, p95 1217 ms (reported) | Separate trial; not directly comparable to baseline |
+| Phase 21JB, 26 Nov 2026 | 100/100 ready, confirmed overlap 100 for 60.076 s; p50 1336 ms, p95 1745 ms, max 2027 ms | Historical protected Preview with relay enabled at that time; no measured fan-out or monthly capacity claim |
+| Production functional and realtime acceptance | Maintainer reported two-account delivery and reconnect after lease | Bounded functional checks, not a load benchmark |
 
-The 100-socket test is a high-end stress scenario, not expected normal traffic. Keep workload, deployment, test duration, warm-up and resource snapshots with any future benchmark. Do not extrapolate to continuous monthly activity.
+The 100-socket trial is a high-end stress scenario, not expected normal traffic. No fabricated uptime, Lighthouse, active-user or throughput figures. Keep future benchmarks scoped by deployment, commit, workload, duration and counters.
 
-## Last observed historical provider snapshot (2026-11-27, before later community/polish deployments)
+## Pre-launch snapshot (28 Nov 2026, about 04:31 Morocco time)
 
-| Provider metric | Value |
-| --- | --- |
-| Vercel active CPU | 26m 52s |
-| Vercel build CPU | 1h 18m |
-| Vercel provisioned memory | 5.1 GB-h |
-| Vercel function invocations | 4.9K |
-| Vercel fast data transfer | 73.08 MB |
-| Neon compute | 2.7 CU-h |
-| Neon storage | 33.8 MB |
-| Redis commands | 7.6K / 500K displayed |
-| Redis storage | 9 KB / 250 MB displayed |
-| Redis cost | $0.00 displayed |
+| Metric | Before first Production deployment (27 Nov) | Final pre-launch |
+| --- | --- | --- |
+| Vercel fast data transfer | 78.23 MB | 88.18 MB |
+| Vercel fast origin transfer | 45.37 MB | 50.67 MB |
+| Vercel CDN requests | 13K | 15K |
+| Vercel function invocations | 5.2K | 5.6K |
+| Vercel active CPU | 28m 33s | 29m 58s |
+| Vercel provisioned memory | 5.6 GB-h | 6.0 GB-h |
+| Vercel build CPU | 1h 28m | 1h 44m |
+| Neon Production compute | 0.1 CU-h | 0.46 CU-h |
+| Neon Production storage | 33.01 MB | 33.21 MB |
+| Redis commands | 9.1K | 11K / 500K displayed |
+| Redis bandwidth | 747 KB | 885 KB |
+| Redis storage | 17 KB | 23 KB |
+| Redis cost shown | $0.00 | $0.00 |
 
-Counters are cumulative and may lag; this is not current usage or isolated benchmark consumption. Review fresh counters before any live test. Track the provider's actual billing cycle and included quotas. GitHub Actions adds a separate compute budget; private repositories can incur charges after included usage. Set spending limits before running CI. Vercel Hobby eligibility is personal/noncommercial; confirm suitability for the actual alumni rollout, not just the portfolio demo. No paid service is added by this patch, but sustained cost cannot be guaranteed.
+These are dashboard snapshots reviewed during acceptance; Vercel/Redis counters may include earlier activity and may lag. Deltas are not isolated test consumption. No paid upgrade was needed at launch. The $0/month objective is conditional on actual use, plan terms and eligibility; not a guarantee of perpetual zero cost or availability. Redis idle-connection behavior was not independently established by the usage snapshots.
 
 ## Strategy
 
-Prefer bounded, indexed queries, request-scoped auth, revision-based cache, lazy socket activation, shared bounded reader, no idle presence heartbeat, batched delivery notices and small client-side animations. Keep privacy/security checks even when they cost requests. Target a useful dashboard and avatars, not minimum possible requests. Use one Preview deployment per accepted feature batch. Reserve larger load tests for release gate.
+Use bounded indexed reads, revision-based cache and fresh authorization, request-scoped session deduplication, lazy sockets, bounded stream reader, no idle presence heartbeat, and measured resource increases for useful UI. Watch active CPU, Redis command rates, database compute and connection trends first. Keep provider billing windows and current allowances in view; do not extrapolate a short trial into a monthly forecast.
 
-Provider references (check current terms and limits): https://vercel.com/docs/plans/hobby ; https://docs.github.com/en/billing/concepts/product-billing/github-actions ; https://neon.com/pricing ; https://upstash.com/pricing/redis .
+Provider references (check current limits): https://vercel.com/docs/plans/hobby ; https://neon.com/pricing ; https://upstash.com/pricing/redis ; https://docs.github.com/en/billing/concepts/product-billing/github-actions .

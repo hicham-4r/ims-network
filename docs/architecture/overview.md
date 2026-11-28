@@ -1,26 +1,32 @@
-# IMS Network architecture — Phase 22 baseline
+# Architecture — v1.0.0
 
-Protected Preview is user-accepted. Production readiness and CI execution are separate gates. See ADRs for historical decisions.
+Initial Production release: 28 November 2026. Historical ADRs record decisions as they were made; current source and this release overview describe the shipped topology.
 
 ## Components and trust boundaries
 
 ```mermaid
 flowchart TB
-  B[Authenticated browser] -->|HTTPS / HttpOnly session| N[Next.js server]
+  B[Browser / PWA] -->|HTTPS / HttpOnly session| N[Next.js server]
   N --> A[Better Auth + ACTIVE account gate]
   A --> Q[Authorized services]
-  Q -->|Pooled runtime queries| P[(Neon PostgreSQL)]
-  Q -->|REST cache, rate limit, append| R[(Upstash Redis)]
-  Q -->|Authenticated avatar access| V[Private Blob]
-  Q --> E[Recovery email]
+  Q -->|Pooled HTTP queries| P[(Neon PostgreSQL)]
+  Q -->|REST cache, limits, notices| R[(Dedicated Production Redis)]
+  Q -->|Authorized image endpoint| V[Private Blob]
+  Q --> E[Verified-email recovery]
   B -->|Lazy authenticated WS| W[Socket access and local hub]
-  R -->|TLS TCP bounded XREAD| W
-  W -->|Scoped change notice| B
+  R -->|TLS TCP bounded stream read| W
+  W -->|Authorized change notice| B
 ```
 
-The durable database stores membership, profiles, conversations, messages, read cursors, delivery acknowledgments and moderation records. Requests derive identity from server sessions. Admin approval remains required; email verification no longer gates registration. Legacy UNVERIFIED state is retained for compatibility. The review-only moderator capability is separate from ADMIN, controlled by the owner. Private message bodies are not exposed to reviewers.
+Identity comes from server sessions, not caller-supplied user IDs. Registration creates a pending account without mandatory email verification. An admin must independently establish eligibility before approval; email possession is not inferred from signup. Member routes and mutations require ACTIVE status. The configured owner is protected; moderator capability is separate from ADMIN, review-only and excludes private message bodies. Reviewer conflict-of-interest restrictions and audit events remain enforced.
 
-React request-scoped cache deduplicates page-account reads within a render only. Member detail cache uses a profile revision and fresh ACTIVE checks. Cache misses and failures have explicit behavior; authorization is not bypassed. Lists are bounded and paginated. Avatars use the existing authenticated endpoint. PWA service worker does not store private responses offline.
+The password-change service uses Better Auth verification/hashing and rechecks the account, live session and credential under PostgreSQL locks. The update revokes all stored sessions, invalidates the prior recovery code and records an audit event atomically. Email reset is limited to previously verified addresses. Eligible ordinary members can use single-use recovery codes; owner recovery codes are intentionally unavailable. No claim is made that all native sign-in/reset races are serialized. Revoked sockets are checked before outbound notices and have a bounded lease, not an instantaneous global disconnect guarantee.
+
+## Persistence and caching
+
+PostgreSQL stores users, sessions, credentials, profiles, conversations, messages, read cursors, delivery acknowledgments, moderation and audit records. The runtime uses pooled Neon HTTP queries; migrations use the direct connection. The nine applied migrations, journal and snapshots are immutable historical artifacts.
+
+React request-scoped cache deduplicates authorization reads within a request. Session lookup starts at a request-time boundary (`connection()`); session cookie caching is disabled. Better Auth logging maps warning/error levels to sanitized events rather than raw provider exceptions. Member-detail cache uses profile revision and a fresh ACTIVE authorization check. Lists are bounded and paginated. Avatars are delivered through an authorized endpoint backed by private Blob. Private authenticated responses are not shared in public caches or stored by the PWA service worker.
 
 ## Message lifecycle
 
@@ -33,22 +39,27 @@ sequenceDiagram
   participant W as Recipient WebSocket
   participant B as Recipient browser
   A->>A: Optimistic bubble with client UUID
-  A->>S: Send / explicit retry with same UUID
+  A->>S: Send or retry with same UUID
   S->>D: Authorized persistence
   S-->>A: Durable result
-  S->>R: Scoped change notice
-  R-->>W: Bounded TCP stream read
+  S->>R: Best-effort scoped change notice
+  R-->>W: Bounded TLS stream read
   W-->>B: Authorized refresh notice
   B->>S: Reconcile bounded history
   B->>S: Browser acknowledgment / read cursor
 ```
 
-Publication is best effort; persisted messages survive relay failure. Reconciliation handles missed notices. The compatible RESP2 TCP adapter uses TLS verification and explicit connection options. No global socket or idle presence heartbeat. Typing and activity are opt-in, conversation-scoped and expire for display. Read receipts reflect stored cursor; delivery means browser acknowledgment, not all-device guarantee.
+Persistence survives failed relay publication. The client reconciles missed notices and retries idempotently. RESP2, verified TLS and the tested TCP options must be preserved. Production uses a 150-second relay lease. One lazy socket per active messaging tab, not one per conversation or one per logged-in user. No idle heartbeat. Recent activity and typing are opt-in, conversation-scoped and time-limited; neither is global presence. Sent means persisted; Delivered means recipient-browser acknowledgment, not universal delivery; Read reflects a stored cursor. Notifications are incoming-message history, not a global push service.
 
-## Environment separation
+## Environments
 
-Development, protected Preview and future Production must have independently verified database targets and Redis isolation. Preview has nine recorded migrations as reported by the maintainer. Production begins with a fresh database unless a legitimate legacy export becomes available. Direct SQL migration credentials and pooled runtime credentials have distinct roles. Runtime Frankfurt routing was observed for the diagnostic WebSocket invocation; verify new deployments. Build region may differ. Git-triggered Vercel deploys remain disabled.
+| | Development | Protected Preview | Production |
+| --- | --- | --- | --- |
+| Neon | Isolated | Isolated, pinned host for limiter | Fresh isolated database |
+| Redis | Prohibited | Prohibited | Dedicated, explicit activation |
+| Mutation limits | Fail closed if no allowed backend | PostgreSQL limiter | Redis |
+| Realtime relay | Off | Off; refresh manually | Enabled |
+| Blob | Separate private store | Separate private store | Separate private store |
+| Access | Local | Vercel authentication | Public canonical domain; member routes protected |
 
-## Related references
-
-[Data model](../data-model.md), [avatar storage](../avatar-storage.md), [community upgrade](../phase22-community-upgrade.md), [performance baseline](../phase21fg-performance.md), [release runbook](../phase23-release-runbook.md).
+Production uses the `ims-network:v1:production` namespace. The Redis isolation flag represents verified operator action, not proof by itself. Do not copy credentials across environments. Git-triggered deployment is disabled in `vercel.json`; runtime region is configured as `fra1`. See [configuration](../phase23-environments.md), [release process](../phase23-release-runbook.md) and [evidence](../phase26-release-evidence.md).

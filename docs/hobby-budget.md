@@ -1,3 +1,5 @@
+> **Historical planning and Phase 13 notes below.** Current Production-only Redis policy, protected Preview PostgreSQL limiter, and launch resource snapshot supersede the old Development Redis, fail-open and not-launched descriptions. See [current environments](phase23-environments.md) and [performance evidence](phase23-performance-evidence.md).
+
 # Hobby-Tier Budget
 
 ## Status
