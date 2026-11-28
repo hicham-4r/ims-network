@@ -3,6 +3,7 @@ import { toNextJsHandler } from "better-auth/next-js";
 
 import { auth } from "@/server/auth/auth";
 import { enforceAuthRateLimit } from "@/server/auth/auth-gate";
+import { handlePasswordChange } from "@/server/auth/password-change-http";
 
 import { serverEnv } from "@/server/env";
 import { captchaRejection, getTurnstileAction, isCanonicalAuthPost, readCaptchaToken, resolveTurnstileConfig, verifyTurnstile } from "@/server/auth/turnstile-core";
@@ -68,6 +69,11 @@ export async function POST(request: Request) {
 
   const bounded = await boundAuthPostBody(request);
   if (bounded instanceof Response) return bounded;
+
+  // This application-owned operation never reaches the generic Better Auth handler.
+  if (new URL(bounded.url).pathname === "/api/auth/password-change") {
+    return handlePasswordChange(bounded);
+  }
 
   if (action && config) {
     const captcha = await verifyTurnstile(config, action, token);

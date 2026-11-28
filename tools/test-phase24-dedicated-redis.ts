@@ -32,7 +32,8 @@ async function main() {
   assert.equal((await evaluateRateLimit(createPreviewLimiter("auth",async()=>{throw new Error("fixture");}),digest,"deny")).allowed,false);
   assert.equal((await evaluateRateLimit(null,digest,"deny")).allowed,false);
   await assert.rejects(limiter.limit("raw-user"));
-  assert.equal(Object.keys(previewLimits).length,20);
+  assert.deepEqual(previewLimits.passwordChange, [5, 600]);
+  assert.equal(Object.keys(previewLimits).length,21);
   console.log("PHASE24_DEDICATED_REDIS_POLICY PASS");
 }
 void main().catch(error=>{console.error(error);process.exitCode=1;});

@@ -3,7 +3,7 @@ import type { RateLimitBackend } from "./rate-limit-core";
 // Fixed-window Preview allowances are no greater than the existing Redis budgets.
 // For sliding-window policies use half the allowance to bound cross-window bursts.
 export const previewLimits = {
-  privacyExport: [20, 600], privacyDeletion: [5, 600], recoveryCode: [5, 600],
+  privacyExport: [20, 600], privacyDeletion: [5, 600], recoveryCode: [5, 600], passwordChange: [5, 600],
   ownerRole: [2, 600], avatarUpload: [5, 600], adminModeration: [30, 300],
   auth: [45, 600], signup: [12, 1800], recovery: [10, 900],
   memberSearch: [40, 60], profileEdit: [12, 600], messageReport: [5, 600],

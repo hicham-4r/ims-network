@@ -5,7 +5,6 @@ const navigation = [
   { label: "Overview", href: "#overview" },
   { label: "Status", href: "#status" },
   { label: "Architecture", href: "#architecture" },
-  { label: "Roadmap", href: "#roadmap" },
 ];
 
 export function SiteHeader() {

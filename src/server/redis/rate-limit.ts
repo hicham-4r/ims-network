@@ -21,6 +21,7 @@ export type RateLimitKind =
   | "privacyExport"
   | "privacyDeletion"
   | "recoveryCode"
+  | "passwordChange"
   | "ownerRole"
   | "avatarUpload"
   | "adminModeration"
@@ -59,6 +60,7 @@ function createLimiter(
 const limiters = {
   privacyExport: createLimiter("privacy-export", Ratelimit.fixedWindow(20, "10 m")),
   privacyDeletion: createLimiter("privacy-deletion", Ratelimit.fixedWindow(5, "10 m")),
+  passwordChange: createLimiter("password-change", Ratelimit.fixedWindow(5, "10 m")),
   recoveryCode: createLimiter("recovery-code", Ratelimit.fixedWindow(5, "10 m")),
   avatarUpload: createLimiter("avatar-upload", Ratelimit.fixedWindow(5, "10 m")),
   adminModeration: createLimiter("admin-moderation", Ratelimit.fixedWindow(30, "5 m")),

@@ -5,7 +5,7 @@ const events = [
   "relay_publish_failed", "relay_attach_failed", "socket_access_unavailable",
   "avatar_access_unavailable", "avatar_upload_failed", "avatar_read_failed",
   "avatar_cleanup_failed", "password_reset_delivery_failed", "maintenance_failed",
-  "recovery_failed", "privacy_failed",
+  "recovery_failed", "privacy_failed", "password_change_failed",
 ] as const;
 export type FailureEvent = typeof events[number];
 const allowed: ReadonlySet<string> = new Set(events);

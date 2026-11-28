@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, type FormEvent, useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,13 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+
+// Informational marker only; no authorization or credential data in the URL.
+function PasswordChangedNotice() {
+  const params = useSearchParams();
+  if (params?.get("passwordChanged") !== "1") return null;
+  return <p role="status" className="mb-4 rounded-lg border bg-muted/40 p-3 text-sm">If you just changed your password, sign in with the new password.</p>;
+}
 
 export default function SignInPage() {
   const router = useRouter();
@@ -72,6 +79,7 @@ export default function SignInPage() {
       </CardHeader>
 
       <CardContent>
+        <Suspense fallback={null}><PasswordChangedNotice /></Suspense>
         <form className="space-y-6" onSubmit={handleSubmit}>
           <FieldGroup>
             <Field>
