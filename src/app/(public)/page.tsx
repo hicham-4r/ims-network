@@ -11,7 +11,6 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -54,8 +53,8 @@ export default function Home() {
           id="overview"
           className="border-b"
         >
-          <div className="mx-auto grid max-w-7xl gap-12 px-4 py-20 sm:px-6 sm:py-28 lg:grid-cols-[1.25fr_0.75fr] lg:px-8 lg:py-32">
-            <div className="flex flex-col justify-center">
+          <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8 lg:py-32">
+            <div className="flex flex-col justify-center lg:max-w-[calc(62.5%_-_1.875rem)]">
               <Badge
                 variant="secondary"
                 className="mb-6 w-fit"
@@ -93,26 +92,6 @@ export default function Home() {
                 </a>
               </div>
             </div>
-
-            <Card className="self-center">
-              <CardHeader>
-                <CardDescription>Current milestone</CardDescription>
-                <CardTitle>Alumni profiles and directory</CardTitle>
-              </CardHeader>
-
-              <CardContent className="space-y-4 text-sm text-muted-foreground">
-                <p>
-                  Secure authentication, administrator approval, profile
-                  editing, and a searchable member directory are available
-                  in development. Private member messaging is available.
-                </p>
-
-                <div className="rounded-lg border bg-muted/40 p-4">
-                  No production users, messages, statistics, or backend data
-                  are being simulated on this interface.
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </section>
 
@@ -176,26 +155,6 @@ export default function Home() {
               })}
             </div>
           </div>
-        </section>
-
-        <section
-          id="roadmap"
-          className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8"
-        >
-          <Card>
-            <CardHeader>
-              <CardDescription>Next development work</CardDescription>
-              <CardTitle>
-                A more connected alumni community
-              </CardTitle>
-            </CardHeader>
-
-            <CardContent>
-              <p className="max-w-3xl leading-7 text-muted-foreground">
-                The next milestones improve member discovery, messaging and the mobile experience, while keeping the application accessible and cost-conscious.
-              </p>
-            </CardContent>
-          </Card>
         </section>
       </main>
 

@@ -31,7 +31,7 @@ export function MemberShell({ children, name, year, canAdmin, canRecover, userId
   const searchTrigger = useRef<HTMLButtonElement>(null);
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(subscribe, clientSnapshot, serverSnapshot);
-  const routes = [...primary, ...(canAdmin ? [{ href: "/admin", label: "Administration", icon: ShieldCheck }] : []), {href:"/moderation",label:"Safety & reports",icon:Flag}, { href: "/account-privacy", label: "Privacy & settings", icon: Settings }, { href: "/install", label: "Install app", icon: Smartphone }, ...(canRecover ? [{ href: "/account-recovery", label: "Recovery code", icon: KeyRound }] : [])];
+  const routes = [...primary, ...(canAdmin ? [{ href: "/admin", label: "Administration", icon: ShieldCheck }] : []), {href:"/moderation",label:"Safety & reports",icon:Flag}, { href: "/account-privacy", label: "Privacy & security", icon: Settings }, { href: "/install", label: "Install app", icon: Smartphone }, ...(canRecover ? [{ href: "/account-recovery", label: "Recovery code", icon: KeyRound }] : [])];
   const term = query.trim();
   const matching = routes.filter(route => route.label.toLowerCase().includes(term.toLowerCase()));
   const current = routes.find(route => pathname === route.href || pathname.startsWith(route.href + "/"));

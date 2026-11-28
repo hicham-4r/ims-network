@@ -4,6 +4,7 @@ const getPaths = new Set(["/api/auth/get-session"]);
 const postPaths = new Set([
   "/api/auth/sign-in/email", "/api/auth/sign-up/email", "/api/auth/sign-out",
   "/api/auth/get-session", "/api/auth/request-password-reset", "/api/auth/reset-password",
+  "/api/auth/password-change",
 ]);
 const emptyBodyPaths = new Set(["/api/auth/sign-out", "/api/auth/get-session"]);
 
