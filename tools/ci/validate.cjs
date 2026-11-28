@@ -17,7 +17,7 @@ function run(label, file, args = []) {
   const r = spawnSync(process.execPath, [file, ...args], { cwd: root, env, stdio: 'inherit', timeout: 120000 });
   if (r.error || r.status !== 0) throw new Error('Quality gate failed: ' + label);
 }
-const structural = ["test-no-email-verification", "test-phase16-auth-layout", "test-phase18c-structure", "test-phase19-structure", "test-phase19b-structure", "test-phase19c-structure", "test-phase20-structure", "test-phase21fg", "test-phase25a5-auth-runtime", "test-phase25b5-password-change"];
+const structural = ["test-no-email-verification", "test-phase16-auth-layout", "test-phase18c-structure", "test-phase19-structure", "test-phase19b-structure", "test-phase19c-structure", "test-phase20-structure", "test-phase21fg", "test-phase25a5-auth-runtime", "test-phase25b5-password-change", "test-phase25b5-ui-polish"];
 const typed = ["test-redis-cache", "test-member-detail-cache", "test-phase13-security", "test-phase16-activation-policy", "test-phase16-relay-budget", "test-phase16-realtime-client", "test-phase16-reader-pacing", "test-phase16-publisher-gate", "test-phase16-handshake-watchdog", "test-phase16-socket-deadline", "test-phase16-local-hub", "test-phase16-local-relay-router", "test-phase16-reader-counters", "test-phase16-reader-early-empty", "test-phase16-relay-protocol", "test-phase16-stream-publisher", "test-phase16-stream-reader", "test-phase16-offline-cross-instance", "test-phase16-stream-reader-tcp", "test-phase16-relay-bridge", "test-phase16-socket-access", "test-phase16-relay-runtime", "test-phase24-production-policy", "test-phase24-dedicated-redis"];
 const mocks = ['Offline','Advanced','Expansion','Integrated','Chat','Community','Polish'];
 try {

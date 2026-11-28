@@ -34,7 +34,9 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
       <dl className="grid gap-4 sm:grid-cols-2">{details.map(([label, value]) => <div key={label}><dt className="text-sm text-muted-foreground">{label}</dt><dd className="break-words font-medium">{value ?? "—"}</dd></div>)}</dl>
       <Link prefetch={false} href={`/admin/audit?target=${encodeURIComponent(account.userId)}`} className="inline-block text-sm underline">Account audit history</Link>
       <AccountControls account={account} actorId={session.user.id} />
-      {configuredOwnerId() === session.user.id && account.userId !== session.user.id && <ReviewerRoleForm targetUserId={account.userId}/>}
+      {configuredOwnerId() === session.user.id && account.userId !== session.user.id &&
+        (account.moderatorUserId !== null || (account.role === "MEMBER" && account.status === "ACTIVE")) &&
+        <ReviewerRoleForm key={account.userId} targetUserId={account.userId} action={account.moderatorUserId !== null ? "REVOKE" : "GRANT"} />}
       {canManageRole && <RoleForm key={`${account.userId}:${account.role}`} targetUserId={account.userId} action={roleAction} />}
     </CardContent></Card></div>;
 }

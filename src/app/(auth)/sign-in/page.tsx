@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, type FormEvent, useState } from "react";
 
@@ -33,6 +34,7 @@ export default function SignInPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -43,6 +45,7 @@ export default function SignInPage() {
       return;
     }
 
+    setPasswordVisible(false);
     setIsPending(true);
     setErrorMessage(null);
 
@@ -105,18 +108,29 @@ export default function SignInPage() {
                 Password
               </FieldLabel>
 
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                minLength={8}
-                maxLength={128}
-                disabled={isPending}
-                required
-              />
+              <div className="flex min-w-0 items-center gap-2">
+                <Input
+                  id="password"
+                  name="password"
+                  type={passwordVisible ? "text" : "password"}
+                  autoComplete="current-password"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  className="h-11 min-w-0"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  minLength={8}
+                  maxLength={128}
+                  disabled={isPending}
+                  required
+                />
+                <Button type="button" variant="outline" className="size-11 shrink-0"
+                  aria-label={passwordVisible ? "Hide password" : "Show password"}
+                  aria-controls="password" disabled={isPending}
+                  onClick={() => setPasswordVisible(value => !value)}>
+                  {passwordVisible ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                </Button>
+              </div>
 
               {errorMessage ? (
                 <FieldDescription
