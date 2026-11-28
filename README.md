@@ -1,66 +1,99 @@
-# IMS Network
+<p align="center"><img src="public/ims-icon-192.png" width="84" height="84" alt="IMS Network logo"></p>
 
-A private professional alumni network for the IMS program at ESITH, Morocco. Built as a full-stack engineering project with a secure membership model, responsive interface and budget-aware real-time messaging.
+<h1 align="center">IMS Network</h1>
+<p align="center"><strong>Connect with your ESITH IMS alumni community.</strong></p>
+<p align="center">
+  <a href="https://ims-network.vercel.app">Live application</a> ·
+  <a href="https://github.com/hicham-4r/ims-network/releases/tag/v1.0.0">v1.0.0 release</a> ·
+  <a href="docs/architecture/overview.md">Architecture</a> ·
+  <a href="docs/phase26-release-evidence.md">Release evidence</a>
+</p>
 
-**Status:** protected Preview accepted by the project maintainer after Phase 22; Production not launched. CI quality workflow is included in Phase 23 and must pass on GitHub before it is described as operational.
+---
 
-## Product
+IMS Network is an independent, non-commercial professional networking platform for graduates of the IMS program at ESITH in Morocco. It brings professional discovery, private conversations and community administration together in a responsive, installable web application.
 
-- Administrator-approved membership, email/password sessions, recovery and account controls. Mandatory email-address verification was deliberately removed; administrative approval remains required.
-- Searchable alumni directory with private avatars, professional fields, skills and mentorship availability.
-- Direct messaging with optimistic sends, idempotent retries, replies, reactions, read/delivery status and bounded real-time refresh notices.
-- Opt-in recent conversation activity and typing; incoming-message notification history (not global push notifications).
-- Owner-managed review-only moderator capability, message reports and administrative audit trail.
-- Responsive charcoal/blue design, light/dark/system themes, keyboard navigation, reduced-motion support and privacy-safe PWA fallback.
+Designed and developed by [hicham-4r](https://github.com/hicham-4r). The initial public release went live on **28 November 2026**. The landing page and registration are public; the network itself is restricted to approved members.
+
+## Product highlights
+
+| Community | Communication | Account & security |
+| --- | --- | --- |
+| Searchable alumni directory | Private realtime messaging | Admin-approved membership |
+| Professional profiles and skills | Replies and emoji reactions | Authenticated password changes |
+| Mentorship availability | Sent, delivered and read states | Email recovery for verified addresses |
+| Private profile pictures | Opt-in typing and recent activity | Single-use member recovery codes |
+| Responsive layout and themes | Incoming-message history | Data export and manual deletion requests |
+
+Owner-controlled moderation, audit history, a keyboard-accessible command palette and an installable PWA complete the experience. Offline navigation shows a fallback rather than storing private conversations.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  Browser[Next.js / React PWA] --> App[Vercel server and WebSocket route]
-  App --> DB[(Neon PostgreSQL)]
-  App --> Redis[(Upstash Redis)]
-  App --> Blob[Private Vercel Blob]
-  App --> Email[Resend recovery email]
-  Redis -->|Bounded stream notices| App
-  App -->|Authorized refresh notice| Browser
+  B[Browser / PWA] -->|HTTPS| A[Next.js on Vercel]
+  A -->|Session + ACTIVE gate| D[(Neon PostgreSQL)]
+  A -->|Private image access| V[Private Blob]
+  A -->|Verified email recovery| E[Resend]
+  A -->|Challenge verification| T[Turnstile]
+  A -->|Cache / limits / notices| R[(Production Upstash Redis)]
+  R -->|TLS stream reader| W[Authorized WebSocket relay]
+  W -->|Scoped refresh notices| B
 ```
 
-Next.js App Router, TypeScript, React, Tailwind CSS, shadcn/ui, Better Auth, Drizzle ORM, Zod, Upstash Redis (REST + TLS TCP reader), Vercel Blob and Resend. PostgreSQL is authoritative; Redis is ephemeral coordination, caching and rate limiting. Sessions and private responses are never shared in public caches.
+PostgreSQL is the durable source of truth. Redis is an ephemeral cache, rate limiter and change-notice transport, not a second message database. Production has dedicated Redis; protected Preview uses its own PostgreSQL rate limiter and does not access Redis. See the [architecture](docs/architecture/overview.md) and [environment guide](docs/phase23-environments.md).
+
+| Layer | Technology |
+| --- | --- |
+| Web | Next.js 16, React 19, TypeScript, Tailwind CSS, shadcn/ui |
+| Identity | Better Auth, Zod, Cloudflare Turnstile |
+| Data | Neon PostgreSQL, Drizzle ORM |
+| Realtime | Redis Streams, ioredis over TLS, WebSockets |
+| Media and email | Private Vercel Blob, Resend |
+| Delivery | Vercel, GitHub Actions, npm lockfile |
 
 ## Engineering evidence
 
 | Trial | Observed result | Scope |
 | --- | --- | --- |
-| Phase 21 HTTP baseline | 300/300 successful reads; p50 1172 ms, p95 2289 ms | Three waves, 100 authenticated accounts; not sustained load |
-| Phase 21 socket trial | 100/100 authenticated sockets, 100 confirmed overlap for 60 s; p95 readiness 1745 ms | Protected Preview, 2026-11-26; not a monthly capacity guarantee |
-| Phase 22 | Offline regressions, local typecheck/lint and Preview functionality accepted by maintainer | User-reported results; independent final release checks pending |
+| Authenticated HTTP baseline | 300/300 successful reads; p50 1,172 ms, p95 2,289 ms | 100 distinct accounts, three waves |
+| Realtime readiness | 100/100 sockets ready; overlap 60.076 s; p95 1,745 ms | Historical protected Preview stress trial |
+| Public launch and PWA | 17/17 maintainer-reported checks passed | Initial Production release |
 
-See [engineering evidence](docs/phase23-performance-evidence.md) for scope and limitations. No fabricated uptime, Lighthouse score or production usage statistics.
+These are scoped historical test results, not an uptime or capacity guarantee. The project targets free-tier infrastructure and avoids idle presence polling, unbounded history reads and unnecessary deployment builds. See [performance evidence](docs/phase23-performance-evidence.md) and [release evidence](docs/phase26-release-evidence.md) for context and limitations.
 
-## Development and verification
+## Local development
 
-Use Node.js 26.13.0 (the tested local version), npm and the lockfile. Install with `npm ci --no-audit --no-fund` after reviewing dependencies. Configure isolated Development services using the [environment checklist](docs/phase23-environments.md). Never copy credentials into Git.
+Use Node.js **26.13.0** (the version pinned in CI), npm and the committed lockfile. Inspect dependency advisories before installing. Configure isolated Development services using `.env.example` as a template; keep real values in local ignored files. Never use Production credentials in Development or CI.
 
-```sh
+```bash
+npm ci --no-audit --no-fund
+node node_modules/next/dist/bin/next typegen
 node tools/ci/validate.cjs
-node tools/ci/check-repository.cjs --staged
-npm audit --audit-level=high
+node tools/ci/check-migrations.cjs --exact
 ```
 
-The quality runner executes reviewed structural and mock tests, migration-content checks, TypeScript and zero-warning ESLint. Historical copied CommonJS fixtures have narrowly scoped lint exceptions for require imports, unused fixture bindings and const style; application lint rules are unchanged. It intentionally does not run live provider tests, migrations or deployments. The repository guard is heuristic, not comprehensive secret scanning. The npm audit queries the package registry and requires manual review of findings; do not use automatic force fixes.
+For runtime work, configure a database with the reviewed schema, then use `npm run dev`. Some abuse-sensitive operations intentionally fail closed without an authorized limiter; use protected Preview for integrated validation. Run `npm run build` in a reviewed non-Production environment before runtime releases. See the [development workflow](docs/development-workflow.md).
 
-For runtime development, the configured database must match the application schema. The current Development database may still be on an older schema; use protected Preview for runtime validation until explicitly migrated. See the [release runbook](docs/phase23-release-runbook.md).
+CI runs structural, mocked and typed regressions, migration-content checks, TypeScript and zero-warning ESLint. It does not run cloud mutations, live acceptance or automatic deployments. Review `npm audit` separately; never force-fix dependencies without checking compatibility.
 
 ## Documentation
 
-- [Architecture and trust boundaries](docs/architecture/overview.md)
-- [Development workflow](docs/development-workflow.md)
-- [CI and release process](docs/phase23-release-runbook.md)
-- [Environment configuration](docs/phase23-environments.md)
-- [Cost and performance evidence](docs/phase23-performance-evidence.md)
-- [Portfolio case study and screenshot guide](docs/phase23-portfolio.md)
-- [Security decisions](docs/adr/)
-- [Community upgrade semantics](docs/phase22-community-upgrade.md)
+| Guide | Contents |
+| --- | --- |
+| [Member guide](docs/member-guide.md) | Joining, messaging, security, privacy and installation |
+| [Architecture](docs/architecture/overview.md) | Trust boundaries, message lifecycle, deployment topology |
+| [Data model](docs/data-model.md) | Schema and historical design notes |
+| [Environment configuration](docs/phase23-environments.md) | Isolated services and flags |
+| [Development workflow](docs/development-workflow.md) | Local checks, Git and migration safety |
+| [Release and operations](docs/phase23-release-runbook.md) | CI, deploys, rollback and incidents |
+| [Release evidence](docs/phase26-release-evidence.md) | Launch acceptance, limitations and follow-up |
+| [Performance evidence](docs/phase23-performance-evidence.md) | Historical tests and resource baseline |
+| [Portfolio case study](docs/phase23-portfolio.md) | Design decisions and engineering trade-offs |
+| [ADRs](docs/adr/) | Decision history |
 
-Production data, account details and credentials are not part of the portfolio. License not selected; no institutional endorsement is implied.
+## Author and copyright
+
+Copyright © 2026 [hicham-4r](https://github.com/hicham-4r). All rights reserved in original project material, subject to applicable law and third-party licenses. See [COPYRIGHT.md](COPYRIGHT.md). No open-source license has been selected for the original project. Third-party components remain subject to their own licenses.
+
+IMS Network is an independent project; no official endorsement by ESITH or any infrastructure provider is implied.

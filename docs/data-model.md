@@ -1,3 +1,5 @@
+> **Release update:** Production uses a fresh isolated Neon database with the nine reviewed migrations, not legacy imports. This document preserves historical schema notes. The current Drizzle schemas under `src/server/db/` and migration snapshots are authoritative; see [architecture](architecture/overview.md) and [release evidence](phase26-release-evidence.md).
+
 # IMS Network Data Model
 
 > Current Phase 22 schema: nine migrations, including professional profiles, chat interactions, browser delivery and moderation. The following historical notes describe earlier stages; see `drizzle/meta/0008_snapshot.json` and `phase22-community-upgrade.md` for current schema and semantics. Production will use a fresh isolated database unless a verified legacy export becomes available.

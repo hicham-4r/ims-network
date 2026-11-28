@@ -1,4 +1,6 @@
-﻿# ADR 0005: Redis Role Boundaries
+> **Implementation update (v1.0.0):** This ADR records the initial design. Redis is now implemented and dedicated to Production only, with Preview using its own PostgreSQL limiter. Typing and recent activity are opt-in, conversation-scoped and bounded. See [current architecture](../architecture/overview.md) and [environments](../phase23-environments.md). The original decision below is preserved as history.
+
+# ADR 0005: Redis Role Boundaries
 
 ## Status
 

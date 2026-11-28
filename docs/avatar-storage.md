@@ -1,4 +1,6 @@
-﻿# Phase 11 - Secure Alumni Avatar Storage
+> **Release update:** Production, Preview and Development each have a separate private Blob store. The historical storage and test notes below describe the original implementation; refer to [current environments](phase23-environments.md) and [architecture](architecture/overview.md).
+
+# Phase 11 - Secure Alumni Avatar Storage
 
 ## Purpose
 

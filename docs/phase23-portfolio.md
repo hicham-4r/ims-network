@@ -1,22 +1,35 @@
 # Portfolio case study — IMS Network
 
-## Problem and solution
+**Project maintainer:** [hicham-4r](https://github.com/hicham-4r)
 
-ESITH IMS alumni need a private professional directory and communication space. The application combines account approval, professional discovery, direct chat, moderation and installability within a deliberately small hosted architecture.
+**Live:** https://ims-network.vercel.app
 
-## Engineering highlights to demonstrate
+**Release:** v1.0.0, 28 November 2026.
 
-1. Membership gate and separation of authentication from application authorization.
-2. PostgreSQL durable persistence with bounded paging and idempotent optimistic sends.
-3. Redis cache revision strategy and TLS stream relay; recovery from a TCP initialization incident without replacing infrastructure.
-4. Measured stress trial: 100 authenticated sockets overlapping for 60 seconds; distinguish this from continuous load and production capacity.
-5. Responsive application shell, keyboard palette, themes, accessible motion, local date formatting and privacy-safe offline fallback.
-6. Guarded migration workflow, CI quality checks and manual release approval.
+## Problem and approach
 
-## Demo and visuals (capture only with synthetic accounts)
+Build a private professional space for ESITH IMS alumni: discover peers, share professional profiles, communicate and moderate community participation without unnecessary infrastructure cost. The solution is a full-stack, responsive PWA with explicit administrative approval and independent verification of alumni eligibility.
 
-Use a fresh test cohort and scrub browser chrome and IDs. Suggested shots: dashboard, directory with fictional profiles, chat with replies/reactions, narrow mobile view, administrative review queue. Capture light and dark modes at consistent viewport sizes. Do not commit current screenshots containing real names, avatars, private chat, provider dashboard IDs or protected deployment URLs. No screenshots are bundled because no approved synthetic captures exist yet. Do not claim a passing CI badge until the first actual GitHub run succeeds.
+## Design decisions and trade-offs
 
-## Interview talking points
+| Challenge | Decision | Trade-off |
+| --- | --- | --- |
+| Private membership | Separate authentication from ACTIVE account authorization | Approval is manual |
+| Durable chat and reliability | PostgreSQL persistence, optimistic UUID-based sends and bounded reconciliation | Relay is best effort; receipts are scoped |
+| Cross-instance realtime | TLS Redis stream reader and lazy WebSockets | Bounded lease, not permanent presence |
+| Free-tier isolation | Production-only Redis; protected Preview PostgreSQL limiter | Preview uses manual message refresh |
+| Account recovery without verification | Single-use member codes; verified-address owner recovery | Recovery is not guaranteed without saved credentials or code |
+| Browser performance | Request-scoped auth, revision-based cache, responsive UI | Security checks remain necessary even when they cost queries |
+| Operational reliability | Guarded source bundles, exact migrations, CI and manual release | Explicit release review instead of automatic cloud mutations |
 
-Explain why PostgreSQL remains authoritative, why Redis holds no durable history, how idempotent retry and reconciliation work, why a socket can be ready while relay fails, how diagnostic logging isolated the TCP issue, and why free-tier constraints led to opt-in activity instead of permanent heartbeats. Be clear about trade-offs: recent activity is not global online status; browser acknowledgment is not universal delivery; email verification was removed but account approval remains; notification history is not push. Production release and exact current provider capacity are not yet verified.
+An authentication incident was identified during controlled Production acceptance: a request-time session query ran into prerendering cancellation and framework logging exposed sensitive parameters. A targeted request boundary and safe logger were implemented, potentially exposed sessions revoked, and Preview/Production retested before launch. This is a useful case study in fixing both correctness and observability, without publishing the original logs.
+
+## Evidence and demonstrations
+
+Historical tests include 300/300 HTTP reads and 100/100 socket readiness with 60.076 seconds of confirmed overlap. These are scoped trials, not production throughput or sustained monthly capacity. The maintainer reported successful public launch and PWA checks. See [performance evidence](phase23-performance-evidence.md) and [release acceptance](phase26-release-evidence.md).
+
+For portfolio screenshots, use isolated synthetic accounts (not live alumni), redact identifiers and browser chrome, and capture dashboard, directory, chat, mobile layout and moderation. Do not commit private screenshots, actual messages, recovery links, tokens or provider dashboards. No screenshots are included in this bundle. Explain limitations rather than inventing metrics or implying institutional endorsement.
+
+## Suggested short portfolio description
+
+Designed and developed IMS Network, an independent full-stack alumni networking PWA for ESITH IMS. Built secure membership approval, professional discovery, realtime private messaging, account recovery and moderation using Next.js, TypeScript, PostgreSQL and Redis, with automated CI and measured free-tier infrastructure usage. Launched the initial public version after controlled Production and PWA acceptance.

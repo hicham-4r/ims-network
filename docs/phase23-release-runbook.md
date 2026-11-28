@@ -1,25 +1,33 @@
-# CI and controlled release runbook
+# CI, release and operations runbook
+
+Applies to the launched v1.0.0 and later maintenance. Historical bootstrap instructions in Phase 24 are not a recipe to recreate the existing owner or database.
 
 ## 1. Quality gates
 
-- GitHub Actions: one standard Linux job, PRs to main, pushes to main, or manual dispatch; superseded runs cancelled, 15-minute timeout, read-only token, pinned official checkout/setup-node actions, no persisted checkout credentials, no cloud secrets, no automatic deployment. Initial dispatch requires workflow on the default branch; open a reviewed PR for the first run. Review any pre-existing workflows before pushing; this patch adds a uniquely named workflow and does not disable unknown workflows.
-- Before staging: review `git status --short`, `git diff --check`, source and docs. Run `node tools/ci/validate.cjs` locally with locked dependencies installed. Run `node tools/ci/check-migrations.cjs --exact` on the local migration-authoring checkout.
-- Stage only intended files, inspect `git diff --cached --stat` and `git diff --cached --check`, run `node tools/ci/check-repository.cjs --staged`. Inspect staged content for secrets, private screenshots and user data. The scanner checks common patterns and filenames only; it does not scan Git history, binaries or all credentials.
-- Commit after review, push existing feature branch, open PR to main. Do not merge until quality checks and release review pass. Enable branch rules requiring the quality job where supported by your repository plan. Do not change visibility or buy a plan just to expose CI badges.
-- Run `npm audit --audit-level=high` explicitly or opt in via manual workflow. Review high/critical advisories and reachability; no automatic dependency upgrades. CI uses npm registry and GitHub compute, not app-provider operations. Check GitHub included minutes and set spending controls before enabling Actions.
+Use a focused branch. Install locked dependencies with `npm ci`, generate route types with `node node_modules/next/dist/bin/next typegen`, run `node tools/ci/validate.cjs`, `node tools/ci/check-migrations.cjs --exact`, `git diff --check`, and a reviewed non-Production build for runtime changes. Review `npm audit --omit=dev` and `npm audit` separately. Do not use `npm audit fix --force`.
 
-## 2. Migration safety
+Stage only intended paths; run `node tools/ci/check-repository.cjs --staged`, `gitleaks git --pre-commit --staged --redact .` and `git diff --cached --check`. Review staged content; heuristic scans are not guarantees. Never stage debug bundles, account identifiers, private logs or screenshots. PR and main CI run on standard Linux with pinned official actions, read-only permissions and no hosted secrets; the workflow does not deploy. Require CI before merge where repository settings support it.
 
-No migration in Phase 23. The immutable baseline records nine SQL migrations, snapshots and journal. CI checks content with normalized CRLF/LF for portable Git checkouts, reports raw byte differences, and does not run SQL. `--exact` blocks raw-byte drift locally. Drizzle ledger hashes are raw bytes: never rewrite applied migrations, never blindly generate or push a new schema, and reconcile Git line-ending normalization with the accepted Preview ledger before preparing Production. Preserve verified original migration archives. Existing guarded migration helpers and their mock suites remain in the Phase 22 bundles on D:. They are not generic CI deploy tools and their historical source guards must not be relaxed.
+## 2. Migration and deployment safety
 
-## 3. Preview release (manual CD)
+Preserve all applied migration bytes and their snapshots/journal. `--exact` detects raw-byte drift; Git line ending normalization must not rewrite applied SQL. A new migration requires a separate reviewed plan, backup/restore verification, explicit target and non-Production acceptance. Do not automatically push schema, rerun initialization or recreate the existing owner.
 
-Keep Git-triggered Vercel deployment disabled. Verify project link and protected Preview, target Neon branch, Redis REST/TCP alignment, recovery path, provider counters and reviewed feature flags. Use the known successful Preview deployment command only when runtime source changes need testing. No deployment is needed solely for Phase 23 docs/CI. Use two synthetic accounts for bounded messaging smoke tests and check reconnection, read/delivery, reports and negative authorization; close sockets after the trial. Record the exact deployment, commit, time window, region and counter deltas privately. Do not put private URLs with tokens in Git.
+Synchronize main and record its SHA. Create a clean detached Git worktree outside the repository, copy only the reviewed `.vercel/project.json` linkage, verify the Vercel project and environment, and deploy manually. Use `npx vercel deploy --environment=preview --logs` for Preview; `--prod` only for an explicitly approved Production operation. No credentials or untracked artifacts copied. No deploy required for documentation-only changes. Keep Git-triggered deploys disabled.
 
-## 4. Production gate (future phase, not executed)
+Preview is Redis-free; it validates persistence, auth and UI, but not live relay. For runtime changes, validate with bounded synthetic tests, then recheck affected paths in Production. Retain known-good deployment identity and note code SHA, flags, migration state and time of each release. Tag the exact accepted application commit, not a later docs-only commit.
 
-Fresh isolated database; verify complete schema and owner bootstrap, real email recovery and Turnstile mode, privacy and account lifecycle, maintenance authorization, runtime region, backup restore procedure, quotas and plan eligibility. Review current Preview-only real-time gates before enabling Production. Run bounded live tests, browser checks and rollback rehearsal; no automatic production deploy or migration. Maintain an explicit release approval and known-good deployment. Source rollback never reverses a database migration.
+## 3. Live operation
 
-## 5. Operational checklist
+- Daily maintenance is configured for 04:00 UTC at `/api/cron/maintenance`; require the dedicated bearer secret, keep `IMS_MAINTENANCE_MODE=inspect`. Never put the secret in browser console history, URLs or logs. Use a trusted local client with secret supplied securely. Review any destructive mode separately.
+- Monitor Vercel active CPU/memory/invocations, Neon compute/storage, Redis commands/connections and Blob usage. Review billing period and plan eligibility. Avoid repeated load trials, permanent idle sockets and broad Redis scans.
+- Approve alumni only after independent identity and eligibility checks. Unverified email is not identity proof. Keep owner mailbox and provider access secure; test recovery in a controlled manner. Deletion requests require manual review, explicit scope and preservation of required audit history.
 
-For a relay incident, verify message persistence, stream publication, WS handshake/ready, TCP reader and recipient forwarding separately. Never log secrets or disable TLS. Prefer bounded diagnostics over repeated deployments. See the Phase 22 diagnostic archives. Keep private recovery records, monitor resource counters and review usage trends. Production is a separate decision after all gates pass.
+## 4. Incident and rollback
+
+For a serious authorization or credential issue, restore All Deployments protection to contain public access; verify anonymous denial. Restrict affected logs, revoke exposed sessions, assess old deployments/credentials and rotate only affected secrets as needed. Do not log raw exceptions, session tokens, passwords or recovery codes.
+
+For relay failures, separate durable persistence, stream publication, TCP reader, socket ready, authorized forwarding and client reconciliation. A 101 handshake alone does not prove delivery. Keep TLS verification enabled. Do not flush Redis or reset the database.
+
+For rollback, verify the known-good deployment has safe auth code, correct provider credentials/flags and compatible schema before promoting it. If uncertain, keep access protected rather than roll back to vulnerable code. Source rollback does not reverse database changes. Check Neon restore availability and recovery point before any destructive operation; restore only after a reviewed data-loss assessment. No automated rollback or migration in this runbook.
+
+See [release evidence](phase26-release-evidence.md) for accepted scope and known limitations.
