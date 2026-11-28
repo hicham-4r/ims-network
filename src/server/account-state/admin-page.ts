@@ -2,7 +2,7 @@ import "server-only";
 
 import { and, asc, eq, gt, ilike, or, type SQL } from "drizzle-orm";
 import { db } from "@/server/db";
-import { applicationUserState, user, profiles } from "@/server/db/schema";
+import { applicationUserState, user, profiles, moderationReviewers } from "@/server/db/schema";
 import { requireAdminPage } from "./routing";
 import { ADMIN_PAGE_SIZE, encodeAdminCursor, escapeSearch, pageOf, parseAccountQuery, validId, type AdminParams } from "./admin-query";
 
@@ -38,7 +38,10 @@ export async function getAdminAccountDetail(id: string) {
   const [account] = await db.select({ ...accountColumns,
     displayName: profiles.displayName, program: profiles.program, department: profiles.department,
     graduationYear: profiles.graduationYear, approvedBy: applicationUserState.approvedBy,
+    moderatorUserId: moderationReviewers.userId,
   }).from(applicationUserState).innerJoin(user, eq(applicationUserState.userId, user.id))
-    .leftJoin(profiles, eq(profiles.userId, user.id)).where(eq(user.id, id)).limit(1);
+    .leftJoin(profiles, eq(profiles.userId, user.id))
+    .leftJoin(moderationReviewers, eq(moderationReviewers.userId, user.id))
+    .where(eq(user.id, id)).limit(1);
   return account ? { ...context, account } : null;
 }
