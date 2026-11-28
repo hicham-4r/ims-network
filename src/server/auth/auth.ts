@@ -13,6 +13,16 @@ export const auth = betterAuth({
   baseURL: serverEnv.BETTER_AUTH_URL,
   secret: serverEnv.BETTER_AUTH_SECRET,
 
+  // Framework errors may contain SQL parameters (including session tokens).
+  // Discard all message/argument data, even in Preview and Development.
+  logger: {
+    level: "warn",
+    log: (level) => {
+      if (level === "error") reportFailure("auth_internal_error");
+      else if (level === "warn") reportFailure("auth_internal_warning");
+    },
+  },
+
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,

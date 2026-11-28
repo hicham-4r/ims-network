@@ -1,5 +1,6 @@
 // Fixed event names only. No arbitrary metadata, errors, request data or identifiers.
 const events = [
+  "auth_internal_error", "auth_internal_warning",
   "auth_handler_unavailable", "session_lookup_failed", "rate_limit_unavailable",
   "relay_publish_failed", "relay_attach_failed", "socket_access_unavailable",
   "avatar_access_unavailable", "avatar_upload_failed", "avatar_read_failed",
